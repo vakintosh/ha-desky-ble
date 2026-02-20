@@ -5,3 +5,4 @@ extracted
 .ruff_cache
 .pytest_cache
 *pycache*
+examples
