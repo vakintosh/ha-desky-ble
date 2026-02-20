@@ -1,0 +1,26 @@
+{
+  "domain": "desky",
+  "name": "Desky Standing Desk",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your-repo/desky-ha",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "bluetooth": [
+    {
+      "service_uuid": "0000ff12-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "0000fe60-0000-1000-8000-00805f9b34fb"
+    },
+    {
+      "service_uuid": "88121427-11e2-52a2-4615-ff00dec16800"
+    }
+  ],
+  "requirements": [
+    "bleak>=0.21.0",
+    "bleak-retry-connector>=3.1.0"
+  ],
+  "version": "1.0.0"
+}

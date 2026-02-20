@@ -1,0 +1,33 @@
+{
+    "config": {
+        "flow_title": "Desky Standing Desk ({name})",
+        "step": {
+            "bluetooth_confirm": {
+                "title": "Desky Desk Discovered",
+                "description": "A Desky standing desk named **{name}** was discovered via Bluetooth. Do you want to set it up?"
+            },
+            "user": {
+                "title": "Add Desky Standing Desk",
+                "description": "Enter the Bluetooth MAC address of your Desky desk.",
+                "data": {
+                    "address": "Bluetooth address"
+                }
+            }
+        },
+        "abort": {
+            "already_configured": "This desk is already configured.",
+            "no_devices_found": "No Desky desks were found nearby."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Desky Options",
+                "data": {
+                    "unit": "Height unit",
+                    "poll_interval": "Status polling interval (seconds)"
+                }
+            }
+        }
+    }
+}
