@@ -92,6 +92,17 @@ class ControllerVariant(Enum):
 class DeskyBleClient:
     """Async BLE client for Desky standing desks."""
 
+    __slots__ = (
+        "_ble_device",
+        "_client",
+        "_variant",
+        "_write_char",
+        "_read_char",
+        "_state",
+        "_state_callback",
+        "_lock",
+    )
+
     def __init__(
         self,
         ble_device: BLEDevice,
