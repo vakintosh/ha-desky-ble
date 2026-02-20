@@ -10,10 +10,14 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import callback
-from homeassistant.data_entry_flow import FlowResult
 
 from .const import (
     ALL_SERVICE_UUIDS,
@@ -46,7 +50,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_bluetooth(
         self,
         discovery_info: BluetoothServiceInfoBleak,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle a desk discovered via BLE."""
         await self.async_set_unique_id(discovery_info.address)
         self._abort_if_unique_id_configured()
@@ -56,7 +60,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_bluetooth_confirm(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Confirm the discovered device."""
         if self._discovery_info is None:
             return self.async_abort(reason="no_devices_found")
@@ -81,7 +85,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle manual configuration."""
         errors: dict[str, str] = {}
 
@@ -95,9 +99,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
             )
 
         # Try to show discovered devices as suggestions
-        discovered: list[BluetoothServiceInfoBleak] = async_discovered_service_info(
-            self.hass
-        )
+        discovered = list(async_discovered_service_info(self.hass))
         desks = [d for d in discovered if _match_service_uuids(d)]
 
         if desks:
@@ -127,7 +129,7 @@ class DeskyOptionsFlow(OptionsFlow):
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
