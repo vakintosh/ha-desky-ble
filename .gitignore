@@ -1,0 +1,7 @@
+decompiled
+extracted
+*.xapk
+.venv
+.ruff_cache
+.pytest_cache
+*pycache*
