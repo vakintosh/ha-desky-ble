@@ -73,10 +73,7 @@ _DUAL_OPCODES = {
 # ---------------------------------------------------------------------------
 def _checksum(cmd: int, length: int, data: bytes) -> int:
     """Compute the additive checksum over cmd + length + data."""
-    total = cmd + length
-    for b in data:
-        total += b
-    return total & 0xFF
+    return (cmd + length + sum(data)) & 0xFF
 
 
 def height_cm_to_raw(height_cm: float) -> int:
