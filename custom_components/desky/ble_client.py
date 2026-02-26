@@ -101,6 +101,7 @@ class DeskyBleClient:
         "_state",
         "_state_callback",
         "_lock",
+        "_desired_settings",
     )
 
     def __init__(
@@ -116,6 +117,8 @@ class DeskyBleClient:
         self._state = DeskState()
         self._state_callback = state_callback
         self._lock = asyncio.Lock()
+        # Maps setting key → (desired_value, frame) for post-reconnect restore.
+        self._desired_settings: dict[str, tuple[int, bytes]] = {}
 
     @property
     def state(self) -> DeskState:
@@ -325,32 +328,74 @@ class DeskyBleClient:
     # ------------------------------------------------------------------
     # Settings setters
     # ------------------------------------------------------------------
+    def _remember(self, key: str, value: int, frame: bytes) -> None:
+        """Record the user's intended value for a setting so it can be
+        restored automatically after a BLE reconnect overwrites it with
+        the desk's EEPROM defaults."""
+        self._desired_settings[key] = (value, frame)
+
     async def set_brightness(self, value: int) -> None:
-        await self._send_setting(cmd_set_brightness(value))
+        frame = cmd_set_brightness(value)
+        self._remember("brightness", value, frame)
+        await self._send_setting(frame)
 
     async def set_led_color(self, value: int) -> None:
-        await self._send_setting(cmd_set_led_color(value))
+        frame = cmd_set_led_color(value)
+        self._remember("led_color", value, frame)
+        await self._send_setting(frame)
 
     async def set_vibration(self, value: int) -> None:
-        await self._send_setting(cmd_set_vibration(value))
+        frame = cmd_set_vibration(value)
+        self._remember("vibration", value, frame)
+        await self._send_setting(frame)
 
     async def set_lock(self, value: int) -> None:
-        await self._send_setting(cmd_set_lock(value))
+        frame = cmd_set_lock(value)
+        self._remember("lock_status", value, frame)
+        await self._send_setting(frame)
 
     async def set_lighting(self, value: int) -> None:
-        await self._send_setting(cmd_set_lighting(value))
+        frame = cmd_set_lighting(value)
+        self._remember("lighting", value, frame)
+        await self._send_setting(frame)
 
     async def set_anti_collision(self, value: int) -> None:
-        await self._send_setting(cmd_set_anti_collision(value))
+        frame = cmd_set_anti_collision(value)
+        self._remember("anti_collision", value, frame)
+        await self._send_setting(frame)
 
     async def set_touch_mode(self, value: int) -> None:
-        await self._send_setting(cmd_set_touch_mode(value))
+        frame = cmd_set_touch_mode(value)
+        self._remember("touch_mode", value, frame)
+        await self._send_setting(frame)
 
     async def set_unit(self, value: int) -> None:
         await self._send_setting(cmd_set_unit(value))
 
     async def set_reminder(self, minutes: int) -> None:
         await self._send_setting(cmd_set_reminder(minutes))
+
+    async def restore_settings(self) -> None:
+        """Re-apply any user-set settings that the desk reported differently
+        after a reconnect (i.e. the desk reverted to its EEPROM defaults).
+
+        Only sends frames for settings where the desk-reported value does not
+        match the desired value, avoiding redundant BLE writes.
+        """
+        if not self._desired_settings:
+            return
+
+        for key, (desired, frame) in self._desired_settings.items():
+            current = getattr(self._state, key, None)
+            if current != desired:
+                _LOGGER.debug(
+                    "Restoring setting '%s': desk=%s → desired=%s",
+                    key,
+                    current,
+                    desired,
+                )
+                await self._send_setting(frame)
+                await asyncio.sleep(0.1)
 
     async def clear_limits(self) -> None:
         await self._send(CMD_CLEAR_LIMIT)

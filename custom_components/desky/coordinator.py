@@ -68,8 +68,13 @@ class DeskyCoordinator(DataUpdateCoordinator[DeskState]):
         try:
             if not self._client.is_connected:
                 await self._client.connect()
-                # After reconnect, fetch all settings once
+                # Fetch all settings once so entities reflect desk state
                 await self._client.request_all_settings()
+                # Wait for setting notifications to arrive, then restore
+                # any values the user previously set (desk reverts to
+                # EEPROM defaults on every reconnect).
+                await asyncio.sleep(0.6)
+                await self._client.restore_settings()
 
             await self._client.request_status()
             # Small delay so notifications can arrive before we return
