@@ -229,6 +229,45 @@ class DeskyBleClient:
             await self._client.write_gatt_char(self._write_char, frame, response=False)
             _LOGGER.debug("TX → %s", frame.hex())
 
+    async def _send_setting(self, frame: bytes) -> None:
+        """Send a settings command using the APK's reliability pattern.
+
+        The official Desky app always:
+          1. Sends a handshake first (t=0)
+          2. Sends the setting frame with response=True  (t≈150 ms)
+          3. Sends the setting frame *again*            (t≈350 ms)
+
+        Using response=True (GATT Write Request) ensures the controller
+        ACKs the write rather than silently discarding it.
+        """
+        async with self._lock:
+            if self._client is None or self._write_char is None:
+                msg = "Not connected"
+                raise RuntimeError(msg)
+            # Step 1 – handshake (same as app's handShaScheduleRunTask)
+            await self._client.write_gatt_char(
+                self._write_char, CMD_HANDSHAKE, response=False
+            )
+            _LOGGER.debug("TX (handshake) → %s", CMD_HANDSHAKE.hex())
+            await asyncio.sleep(0.15)
+            # Step 2 – first write with acknowledgement
+            await self._client.write_gatt_char(self._write_char, frame, response=True)
+            _LOGGER.debug("TX (setting #1) → %s", frame.hex())
+            await asyncio.sleep(0.20)
+            # Step 3 – duplicate write (APK reliability pattern)
+            await self._client.write_gatt_char(self._write_char, frame, response=True)
+            _LOGGER.debug("TX (setting #2) → %s", frame.hex())
+
+    async def _send_preset(self, frame: bytes) -> None:
+        """Send a memory-preset command using the APK's reliability pattern.
+
+        Preset recall/save commands are identical in structure to settings
+        commands — the desk controller routinely ignores bare, single-write
+        frames.  Mirroring the app's handshake + 2× confirmed-write sequence
+        eliminates the need to press the button more than once.
+        """
+        await self._send_setting(frame)
+
     # ------------------------------------------------------------------
     # High-level desk commands
     # ------------------------------------------------------------------
@@ -254,7 +293,7 @@ class DeskyBleClient:
         if frame is None:
             msg = f"Invalid memory slot {slot}"
             raise ValueError(msg)
-        await self._send(frame)
+        await self._send_preset(frame)
 
     async def save_memory(self, slot: int) -> None:
         """Save current height to a memory slot (1–4)."""
@@ -262,7 +301,7 @@ class DeskyBleClient:
         if frame is None:
             msg = f"Invalid memory slot {slot}"
             raise ValueError(msg)
-        await self._send(frame)
+        await self._send_preset(frame)
 
     # ------------------------------------------------------------------
     # Status queries
@@ -287,31 +326,31 @@ class DeskyBleClient:
     # Settings setters
     # ------------------------------------------------------------------
     async def set_brightness(self, value: int) -> None:
-        await self._send(cmd_set_brightness(value))
+        await self._send_setting(cmd_set_brightness(value))
 
     async def set_led_color(self, value: int) -> None:
-        await self._send(cmd_set_led_color(value))
+        await self._send_setting(cmd_set_led_color(value))
 
     async def set_vibration(self, value: int) -> None:
-        await self._send(cmd_set_vibration(value))
+        await self._send_setting(cmd_set_vibration(value))
 
     async def set_lock(self, value: int) -> None:
-        await self._send(cmd_set_lock(value))
+        await self._send_setting(cmd_set_lock(value))
 
     async def set_lighting(self, value: int) -> None:
-        await self._send(cmd_set_lighting(value))
+        await self._send_setting(cmd_set_lighting(value))
 
     async def set_anti_collision(self, value: int) -> None:
-        await self._send(cmd_set_anti_collision(value))
+        await self._send_setting(cmd_set_anti_collision(value))
 
     async def set_touch_mode(self, value: int) -> None:
-        await self._send(cmd_set_touch_mode(value))
+        await self._send_setting(cmd_set_touch_mode(value))
 
     async def set_unit(self, value: int) -> None:
-        await self._send(cmd_set_unit(value))
+        await self._send_setting(cmd_set_unit(value))
 
     async def set_reminder(self, minutes: int) -> None:
-        await self._send(cmd_set_reminder(minutes))
+        await self._send_setting(cmd_set_reminder(minutes))
 
     async def clear_limits(self) -> None:
         await self._send(CMD_CLEAR_LIMIT)

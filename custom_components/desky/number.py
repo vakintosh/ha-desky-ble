@@ -1,4 +1,4 @@
-"""Desky target-height number platform."""
+"""Desky number platform — target height and reminder timer."""
 
 from __future__ import annotations
 
@@ -20,7 +20,12 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([DeskyTargetHeight(coordinator, entry)])
+    async_add_entities(
+        [
+            DeskyTargetHeight(coordinator, entry),
+            DeskyReminder(coordinator, entry),
+        ]
+    )
 
 
 class DeskyTargetHeight(CoordinatorEntity[DeskyCoordinator], NumberEntity):
@@ -54,3 +59,43 @@ class DeskyTargetHeight(CoordinatorEntity[DeskyCoordinator], NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         raw = height_cm_to_raw(value)
         await self.coordinator.client.move_to_height(raw)
+
+
+class DeskyReminder(CoordinatorEntity[DeskyCoordinator], NumberEntity):
+    """Number entity for the desk's built-in reminder / alert timer.
+
+    The desk controller has an internal countdown (opcode 0xB1 SET_REMINDER).
+    When set to N minutes the controller buzzes once when the timer expires.
+    Setting the value to 0 disables any active reminder.
+
+    Use this as a pre-alert buzzer from automations:
+        1. Set reminder to 1 (or 2) minutes before a posture change.
+        2. When the desk buzzes, the posture-change automation fires.
+    """
+
+    _attr_has_entity_name = True
+    _attr_name = "Reminder"
+    _attr_icon = "mdi:timer-alert"
+    _attr_mode = NumberMode.SLIDER
+    _attr_native_min_value = 0
+    _attr_native_max_value = 120
+    _attr_native_step = 1
+    _attr_native_unit_of_measurement = "min"
+
+    def __init__(
+        self,
+        coordinator: DeskyCoordinator,
+        entry: ConfigEntry,
+    ) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_reminder"
+        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+
+    @property
+    def native_value(self) -> float | None:
+        # The reminder value is write-only on the hardware; we have no read-back.
+        # Return None so HA shows the entity as "unknown" until set.
+        return None
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.client.set_reminder(int(value))
