@@ -9,7 +9,6 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.cover import (
-    CoverDeviceClass,
     CoverEntity,
     CoverEntityFeature,
 )
@@ -35,7 +34,7 @@ async def async_setup_entry(
 class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
     """Cover entity representing the Desky standing desk."""
 
-    _attr_device_class = CoverDeviceClass.BLIND
+    # No device_class — renders as a generic cover (no blind/shade/door icon)
     _attr_supported_features = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
@@ -60,6 +59,9 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
         }
         self._min_raw = int(DEFAULT_MIN_HEIGHT_CM * 10)
         self._max_raw = int(DEFAULT_MAX_HEIGHT_CM * 10)
+        # Track height direction: >0 opening (going up), <0 closing (going down)
+        self._prev_height_raw: int | None = None
+        self._moving_up: bool | None = None
 
     # ------------------------------------------------------------------
     # State
@@ -84,11 +86,11 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
 
     @property
     def is_opening(self) -> bool:
-        return self._desk.is_moving and (self.current_cover_position or 0) < 100
+        return self._desk.is_moving and self._moving_up is True
 
     @property
     def is_closing(self) -> bool:
-        return self._desk.is_moving and (self.current_cover_position or 0) > 0
+        return self._desk.is_moving and self._moving_up is False
 
     # ------------------------------------------------------------------
     # Commands
@@ -118,4 +120,23 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
             self._max_raw = state.upper_limit_raw
         if state.lower_limit_raw is not None:
             self._min_raw = state.lower_limit_raw
+
+        # Infer movement direction from consecutive height readings
+        current = state.height_raw
+        if (
+            state.is_moving
+            and current is not None
+            and self._prev_height_raw is not None
+        ):
+            delta = current - self._prev_height_raw
+            if delta > 0:
+                self._moving_up = True
+            elif delta < 0:
+                self._moving_up = False
+            # delta == 0: keep previous direction
+        elif not state.is_moving:
+            # Desk stopped — reset direction so is_opening/is_closing return False
+            self._moving_up = None
+
+        self._prev_height_raw = current
         self.async_write_ha_state()
