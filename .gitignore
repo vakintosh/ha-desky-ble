@@ -6,3 +6,4 @@ extracted
 .pytest_cache
 *pycache*
 examples
+tests
