@@ -1,9 +1,3 @@
-"""Desky cover (desk) platform.
-
-Maps the desk to a Home Assistant *cover* entity so it gets up / down / stop
-controls and a position slider in the UI.
-"""
-
 from __future__ import annotations
 
 from typing import Any
@@ -34,7 +28,6 @@ async def async_setup_entry(
 class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
     """Cover entity representing the Desky standing desk."""
 
-    # No device_class — renders as a generic cover (no blind/shade/door icon)
     _attr_supported_features = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
@@ -59,13 +52,9 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
         }
         self._min_raw = int(DEFAULT_MIN_HEIGHT_CM * 10)
         self._max_raw = int(DEFAULT_MAX_HEIGHT_CM * 10)
-        # Track height direction: >0 opening (going up), <0 closing (going down)
         self._prev_height_raw: int | None = None
         self._moving_up: bool | None = None
 
-    # ------------------------------------------------------------------
-    # State
-    # ------------------------------------------------------------------
     @property
     def _desk(self) -> DeskState:
         return self.coordinator.desk_state
@@ -92,9 +81,6 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
     def is_closing(self) -> bool:
         return self._desk.is_moving and self._moving_up is False
 
-    # ------------------------------------------------------------------
-    # Commands
-    # ------------------------------------------------------------------
     async def async_open_cover(self, **kwargs: Any) -> None:
         await self.coordinator.client.move_up()
 
@@ -114,14 +100,12 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        # Update limits from desk if available
         state = self._desk
         if state.upper_limit_raw is not None:
             self._max_raw = state.upper_limit_raw
         if state.lower_limit_raw is not None:
             self._min_raw = state.lower_limit_raw
 
-        # Infer movement direction from consecutive height readings
         current = state.height_raw
         if (
             state.is_moving
@@ -133,9 +117,7 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
                 self._moving_up = True
             elif delta < 0:
                 self._moving_up = False
-            # delta == 0: keep previous direction
         elif not state.is_moving:
-            # Desk stopped — reset direction so is_opening/is_closing return False
             self._moving_up = None
 
         self._prev_height_raw = current

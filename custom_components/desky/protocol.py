@@ -1,14 +1,3 @@
-"""Desky BLE frame protocol encoder / decoder.
-
-Frame format (commands sent TO desk):
-    [0xF1, 0xF1, CMD, LEN, *DATA, CHECKSUM, 0x7E]
-
-Frame format (notifications FROM desk):
-    [0xF2, 0xF2, CMD, LEN, *DATA, CHECKSUM]
-
-CHECKSUM = (CMD + LEN + sum(DATA)) & 0xFF
-"""
-
 from __future__ import annotations
 
 import dataclasses
@@ -57,7 +46,6 @@ class Opcode(enum.IntEnum):
     HANDSHAKE = 0xFE
 
 
-# Opcodes used as both get and set (LEN=0 → get, LEN>0 → set)
 _DUAL_OPCODES = {
     Opcode.SET_ANTI_COLLISION,
     Opcode.SET_LOCK,
@@ -68,9 +56,6 @@ _DUAL_OPCODES = {
 }
 
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
 def _checksum(cmd: int, length: int, data: bytes) -> int:
     """Compute the additive checksum over cmd + length + data."""
     return (cmd + length + sum(data)) & 0xFF
@@ -91,9 +76,6 @@ def height_is_cm(raw: int) -> bool:
     return raw >= 550
 
 
-# ---------------------------------------------------------------------------
-# Frame builder
-# ---------------------------------------------------------------------------
 def build_frame(opcode: int, data: bytes = b"") -> bytes:
     """Build a complete TX frame ready to write to the BLE characteristic.
 
@@ -107,9 +89,6 @@ def build_frame(opcode: int, data: bytes = b"") -> bytes:
     return HEADER_TX + bytes([opcode, length]) + data + bytes([cs, FOOTER_TX])
 
 
-# ---------------------------------------------------------------------------
-# Pre-built command frames (zero-data commands)
-# ---------------------------------------------------------------------------
 CMD_MOVE_UP = build_frame(Opcode.MOVE_UP)
 CMD_MOVE_DOWN = build_frame(Opcode.MOVE_DOWN)
 CMD_STOP = build_frame(Opcode.STOP)
@@ -126,19 +105,15 @@ CMD_GET_LIMIT = build_frame(Opcode.GET_LIMIT)
 CMD_CLEAR_LIMIT = build_frame(Opcode.CLEAR_LIMIT)
 CMD_HANDSHAKE = build_frame(Opcode.HANDSHAKE)
 
-# Get-setting commands (LEN=0 queries)
 CMD_GET_ANTI_COLLISION = build_frame(Opcode.SET_ANTI_COLLISION)
 CMD_GET_LOCK = build_frame(Opcode.SET_LOCK)
 CMD_GET_VIBRATION = build_frame(Opcode.SET_VIBRATION)
 CMD_GET_LED_COLOR = build_frame(Opcode.SET_LED_COLOR)
 CMD_GET_LIGHTING = build_frame(Opcode.SET_LIGHTING)
 CMD_GET_BRIGHTNESS = build_frame(Opcode.SET_BRIGHTNESS)
-CMD_GET_CURRENT_LIMITATION = build_frame(0x20)  # 0x20 queries limitation state
+CMD_GET_CURRENT_LIMITATION = build_frame(0x20)
 
 
-# ---------------------------------------------------------------------------
-# Parameterised command builders
-# ---------------------------------------------------------------------------
 def cmd_move_to_height(raw_height: int) -> bytes:
     """Build a move-to-height command (raw = cm × 10)."""
     data = bytes([(raw_height >> 8) & 0xFF, raw_height & 0xFF])
@@ -196,16 +171,12 @@ def cmd_set_reminder(minutes: int) -> bytes:
     return cmd_set_value(Opcode.SET_REMINDER, minutes)
 
 
-# ---------------------------------------------------------------------------
-# Notification parser
-# ---------------------------------------------------------------------------
 @dataclasses.dataclass(slots=True)
 class DeskState:
     """Mutable snapshot of all known desk state."""
 
     height_raw: int | None = None
     is_moving: bool = False
-    # Settings (populated lazily as notifications arrive)
     lock_status: int | None = None  # 0=off, 1=on
     brightness: int | None = None  # 0-100
     led_color: int | None = None  # 1-7
@@ -243,62 +214,51 @@ def parse_notification(data: bytes | bytearray, state: DeskState) -> bool:
     cmd = int(cmd_str, 16)
     data_len = int(len_str, 16)
 
-    # Height report: F2F2 01 03 HH HH …
     if cmd == 0x01 and data_len == 0x03 and len(hex_str) >= 12:
         raw = int(hex_str[8:12], 16)
         state.height_raw = raw
         state.is_moving = True
         return True
 
-    # Upper limit: F2F2 21 02 HH HH
     if cmd == 0x21 and data_len == 0x02 and len(hex_str) >= 12:
         state.upper_limit_raw = int(hex_str[8:12], 16)
         state.has_limits = True
         return True
 
-    # Lower limit: F2F2 22 02 HH HH
     if cmd == 0x22 and data_len == 0x02 and len(hex_str) >= 12:
         state.lower_limit_raw = int(hex_str[8:12], 16)
         state.has_limits = True
         return True
 
-    # Limitation status: F2F2 20 01 XX
     if cmd == 0x20 and data_len == 0x01 and len(hex_str) >= 10:
         status = int(hex_str[8:10], 16)
         state.has_limits = status != 0x00
         return True
 
-    # Anti-collision sensitivity: F2F2 1D 01 VV
     if cmd == 0x1D and data_len == 0x01 and len(hex_str) >= 10:
         state.anti_collision = int(hex_str[8:10], 16)
         return True
 
-    # Lock status: F2F2 B2 01 VV
     if cmd == 0xB2 and data_len == 0x01 and len(hex_str) >= 10:
         state.lock_status = int(hex_str[8:10], 16)
         return True
 
-    # Brightness: F2F2 B6 01 VV
     if cmd == 0xB6 and data_len == 0x01 and len(hex_str) >= 10:
         state.brightness = int(hex_str[8:10], 16)
         return True
 
-    # LED color: F2F2 B4 01 VV
     if cmd == 0xB4 and data_len == 0x01 and len(hex_str) >= 10:
         state.led_color = int(hex_str[8:10], 16)
         return True
 
-    # Vibration: F2F2 B3 01 VV
     if cmd == 0xB3 and data_len == 0x01 and len(hex_str) >= 10:
         state.vibration = int(hex_str[8:10], 16)
         return True
 
-    # Lighting: F2F2 B5 01 VV
     if cmd == 0xB5 and data_len == 0x01 and len(hex_str) >= 10:
         state.lighting = int(hex_str[8:10], 16)
         return True
 
-    # Touch mode: F2F2 19 01 VV
     if cmd == 0x19 and data_len == 0x01 and len(hex_str) >= 10:
         state.touch_mode = int(hex_str[8:10], 16)
         return True

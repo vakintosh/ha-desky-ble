@@ -1,5 +1,3 @@
-"""Desky select entities (LED colour, anti-collision, touch mode)."""
-
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity

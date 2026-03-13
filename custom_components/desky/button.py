@@ -1,5 +1,3 @@
-"""Desky memory-preset button entities."""
-
 from __future__ import annotations
 
 from homeassistant.components.button import ButtonEntity
@@ -56,7 +54,7 @@ class DeskySavePresetButton(CoordinatorEntity[DeskyCoordinator], ButtonEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:bookmark-plus"
-    _attr_entity_registry_enabled_default = False  # hidden by default
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self,

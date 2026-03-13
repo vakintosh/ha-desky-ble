@@ -1,8 +1,3 @@
-"""Desky data-update coordinator.
-
-Manages the BLE client lifecycle and distributes desk state to all entities.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -52,40 +47,27 @@ class DeskyCoordinator(DataUpdateCoordinator[DeskState]):
     def desk_state(self) -> DeskState:
         return self._client.state
 
-    # ------------------------------------------------------------------
-    # State push (from BLE notifications → entity updates)
-    # ------------------------------------------------------------------
     @callback
     def _on_state_update(self, _state: DeskState) -> None:
         """Called by the BLE client whenever a notification is parsed."""
         self.async_set_updated_data(self._client.state)
 
-    # ------------------------------------------------------------------
-    # Polling (DataUpdateCoordinator interface)
-    # ------------------------------------------------------------------
     async def _async_update_data(self) -> DeskState:
         """Connect (if needed) and poll the desk for status."""
         try:
             if not self._client.is_connected:
                 await self._client.connect()
-                # Fetch all settings once so entities reflect desk state
                 await self._client.request_all_settings()
-                # Wait for setting notifications to arrive, then restore
-                # any values the user previously set (desk reverts to
-                # EEPROM defaults on every reconnect).
+
                 await asyncio.sleep(0.6)
                 await self._client.restore_settings()
 
             await self._client.request_status()
-            # Small delay so notifications can arrive before we return
             await asyncio.sleep(0.5)
         except Exception as err:
             raise UpdateFailed(f"Error communicating with desk: {err}") from err
         return self._client.state
 
-    # ------------------------------------------------------------------
-    # Cleanup
-    # ------------------------------------------------------------------
     async def async_shutdown(self) -> None:
         """Disconnect BLE client on HA shutdown."""
         await self._client.disconnect()
