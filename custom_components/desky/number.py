@@ -9,7 +9,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DEFAULT_MAX_HEIGHT_CM, DEFAULT_MIN_HEIGHT_CM, DOMAIN
 from .coordinator import DeskyCoordinator
-from .protocol import height_cm_to_raw
+
+from desky_ble import height_cm_to_raw
 
 
 async def async_setup_entry(

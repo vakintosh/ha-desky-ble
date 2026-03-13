@@ -13,7 +13,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN
 from .coordinator import DeskyCoordinator
-from .protocol import height_is_cm
+
+from desky_ble import height_is_cm
 
 
 async def async_setup_entry(

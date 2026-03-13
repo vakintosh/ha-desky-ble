@@ -1,3 +1,9 @@
+"""BLE protocol encoder/decoder for Desky standing desks.
+
+This module is a standalone copy of the protocol layer, usable without
+Home Assistant.  It is re-exported by the ``desky_ble`` PyPI package.
+"""
+
 from __future__ import annotations
 
 import dataclasses
@@ -174,13 +180,13 @@ class DeskState:
 
     height_raw: int | None = None
     is_moving: bool = False
-    lock_status: int | None = None  # 0=off, 1=on
-    brightness: int | None = None  # 0-100
-    led_color: int | None = None  # 1-7
-    vibration: int | None = None  # 0=off, 1=on
-    lighting: int | None = None  # 0=off, 1=on
-    anti_collision: int | None = None  # 1-3
-    touch_mode: int | None = None  # 0=one-press, 1=hold
+    lock_status: int | None = None
+    brightness: int | None = None
+    led_color: int | None = None
+    vibration: int | None = None
+    lighting: int | None = None
+    anti_collision: int | None = None
+    touch_mode: int | None = None
     upper_limit_raw: int | None = None
     lower_limit_raw: int | None = None
     has_limits: bool = False
@@ -196,69 +202,68 @@ def parse_notification(data: bytes | bytearray, state: DeskState) -> bool:
     """Parse a BLE notification payload and update *state* in-place.
 
     Returns ``True`` if the notification was recognised and handled.
+
+    Uses a zero-copy ``memoryview`` to avoid intermediate allocations
+    when slicing the incoming BLE payload.
     """
-    hex_str = data.hex().upper()
+    mv = memoryview(data)
 
-    if len(hex_str) < 12:
+    if len(mv) < 6:
         return False
 
-    header = hex_str[:4]
-    if header != "F2F2":
+    if mv[0] != 0xF2 or mv[1] != 0xF2:
         return False
 
-    cmd_str = hex_str[4:6]
-    len_str = hex_str[6:8]
-    cmd = int(cmd_str, 16)
-    data_len = int(len_str, 16)
+    cmd = mv[2]
+    data_len = mv[3]
 
-    if cmd == 0x01 and data_len == 0x03 and len(hex_str) >= 12:
-        raw = int(hex_str[8:12], 16)
+    if cmd == 0x01 and data_len == 0x03 and len(mv) >= 6:
+        raw = (mv[4] << 8) | mv[5]
         state.height_raw = raw
         state.is_moving = True
         return True
 
-    if cmd == 0x21 and data_len == 0x02 and len(hex_str) >= 12:
-        state.upper_limit_raw = int(hex_str[8:12], 16)
+    if cmd == 0x21 and data_len == 0x02 and len(mv) >= 6:
+        state.upper_limit_raw = (mv[4] << 8) | mv[5]
         state.has_limits = True
         return True
 
-    if cmd == 0x22 and data_len == 0x02 and len(hex_str) >= 12:
-        state.lower_limit_raw = int(hex_str[8:12], 16)
+    if cmd == 0x22 and data_len == 0x02 and len(mv) >= 6:
+        state.lower_limit_raw = (mv[4] << 8) | mv[5]
         state.has_limits = True
         return True
 
-    if cmd == 0x20 and data_len == 0x01 and len(hex_str) >= 10:
-        status = int(hex_str[8:10], 16)
-        state.has_limits = status != 0x00
+    if cmd == 0x20 and data_len == 0x01 and len(mv) >= 5:
+        state.has_limits = mv[4] != 0x00
         return True
 
-    if cmd == 0x1D and data_len == 0x01 and len(hex_str) >= 10:
-        state.anti_collision = int(hex_str[8:10], 16)
+    if cmd == 0x1D and data_len == 0x01 and len(mv) >= 5:
+        state.anti_collision = mv[4]
         return True
 
-    if cmd == 0xB2 and data_len == 0x01 and len(hex_str) >= 10:
-        state.lock_status = int(hex_str[8:10], 16)
+    if cmd == 0xB2 and data_len == 0x01 and len(mv) >= 5:
+        state.lock_status = mv[4]
         return True
 
-    if cmd == 0xB6 and data_len == 0x01 and len(hex_str) >= 10:
-        state.brightness = int(hex_str[8:10], 16)
+    if cmd == 0xB6 and data_len == 0x01 and len(mv) >= 5:
+        state.brightness = mv[4]
         return True
 
-    if cmd == 0xB4 and data_len == 0x01 and len(hex_str) >= 10:
-        state.led_color = int(hex_str[8:10], 16)
+    if cmd == 0xB4 and data_len == 0x01 and len(mv) >= 5:
+        state.led_color = mv[4]
         return True
 
-    if cmd == 0xB3 and data_len == 0x01 and len(hex_str) >= 10:
-        state.vibration = int(hex_str[8:10], 16)
+    if cmd == 0xB3 and data_len == 0x01 and len(mv) >= 5:
+        state.vibration = mv[4]
         return True
 
-    if cmd == 0xB5 and data_len == 0x01 and len(hex_str) >= 10:
-        state.lighting = int(hex_str[8:10], 16)
+    if cmd == 0xB5 and data_len == 0x01 and len(mv) >= 5:
+        state.lighting = mv[4]
         return True
 
-    if cmd == 0x19 and data_len == 0x01 and len(hex_str) >= 10:
-        state.touch_mode = int(hex_str[8:10], 16)
+    if cmd == 0x19 and data_len == 0x01 and len(mv) >= 5:
+        state.touch_mode = mv[4]
         return True
 
-    _LOGGER.debug("Unhandled notification: %s", hex_str)
+    _LOGGER.debug("Unhandled notification: %s", bytes(mv).hex())
     return False

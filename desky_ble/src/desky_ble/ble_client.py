@@ -1,3 +1,9 @@
+"""BLE client for Desky standing desks.
+
+Standalone version without Home Assistant dependencies.
+BLE UUIDs and constants are defined locally.
+"""
+
 from __future__ import annotations
 
 import asyncio
@@ -10,19 +16,6 @@ from bleak.backends.characteristic import BleakGATTCharacteristic
 from bleak.backends.device import BLEDevice
 from bleak_retry_connector import establish_connection
 
-from .const import (
-    LOGIN_PAYLOAD,
-    UUID_CHAR_LOGIN_WRITE,
-    UUID_CHAR_READ_LIERDA1,
-    UUID_CHAR_READ_LIERDA2,
-    UUID_CHAR_RW_PEILIN,
-    UUID_CHAR_WRITE_LIERDA1,
-    UUID_CHAR_WRITE_LIERDA2,
-    UUID_SERVICE_LIERDA1,
-    UUID_SERVICE_LIERDA2,
-    UUID_SERVICE_LOGIN,
-    UUID_SERVICE_PEILIN,
-)
 from .protocol import (
     CMD_CLEAR_LIMIT,
     CMD_GET_ANTI_COLLISION,
@@ -59,6 +52,28 @@ from .protocol import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+UUID_SERVICE_LIERDA1 = "0000ff12-0000-1000-8000-00805f9b34fb"
+UUID_CHAR_WRITE_LIERDA1 = "0000ff01-0000-1000-8000-00805f9b34fb"
+UUID_CHAR_READ_LIERDA1 = "0000ff02-0000-1000-8000-00805f9b34fb"
+
+UUID_SERVICE_LIERDA2 = "0000fe60-0000-1000-8000-00805f9b34fb"
+UUID_CHAR_WRITE_LIERDA2 = "0000fe61-0000-1000-8000-00805f9b34fb"
+UUID_CHAR_READ_LIERDA2 = "0000fe62-0000-1000-8000-00805f9b34fb"
+
+UUID_SERVICE_PEILIN = "88121427-11e2-52a2-4615-ff00dec16800"
+UUID_CHAR_RW_PEILIN = "88121427-11e2-52a2-4615-ff00dec16801"
+
+UUID_SERVICE_LOGIN = "9e5d1e47-5c13-43a0-8635-82adffc0386f"
+UUID_CHAR_LOGIN_WRITE = "9e5d1e47-5c13-43a0-8635-82adffc1386f"
+
+LOGIN_PAYLOAD = bytes([0x01, 0x16, 0x02, 0x38, 0x38, 0x38, 0x38])
+
+ALL_SERVICE_UUIDS: list[str] = [
+    UUID_SERVICE_LIERDA1,
+    UUID_SERVICE_LIERDA2,
+    UUID_SERVICE_PEILIN,
+]
 
 _RECALL_MEMORY_CMDS: dict[int, bytes] = {
     1: CMD_RECALL_MEMORY_1,
@@ -135,7 +150,7 @@ class DeskyBleClient:
         await self._detect_variant()
         await self._setup_notifications()
         await self._send(CMD_HANDSHAKE)
-        _LOGGER.info(
+        _LOGGER.debug(
             "Connected to Desky %s (variant=%s)",
             self._ble_device.address,
             self._variant,
@@ -213,16 +228,7 @@ class DeskyBleClient:
             _LOGGER.debug("TX → %s", frame.hex())
 
     async def _send_setting(self, frame: bytes) -> None:
-        """Send a settings command using the APK's reliability pattern.
-
-        The official Desky app always:
-          1. Sends a handshake first (t=0)
-          2. Sends the setting frame with response=True  (t≈150 ms)
-          3. Sends the setting frame *again*            (t≈350 ms)
-
-        Using response=True (GATT Write Request) ensures the controller
-        ACKs the write rather than silently discarding it.
-        """
+        """Send a settings command using the APK's reliability pattern."""
         async with self._lock:
             if self._client is None or self._write_char is None:
                 msg = "Not connected"
@@ -239,13 +245,7 @@ class DeskyBleClient:
             _LOGGER.debug("TX (setting #2) → %s", frame.hex())
 
     async def _send_preset(self, frame: bytes) -> None:
-        """Send a memory-preset command using the APK's reliability pattern.
-
-        Preset recall/save commands are identical in structure to settings
-        commands — the desk controller routinely ignores bare, single-write
-        frames.  Mirroring the app's handshake + 2× confirmed-write sequence
-        eliminates the need to press the button more than once.
-        """
+        """Send a memory-preset command using the APK's reliability pattern."""
         await self._send_setting(frame)
 
     async def move_up(self) -> None:
@@ -297,9 +297,7 @@ class DeskyBleClient:
             await asyncio.sleep(0.1)
 
     def _remember(self, key: str, value: int, frame: bytes) -> None:
-        """Record the user's intended value for a setting so it can be
-        restored automatically after a BLE reconnect overwrites it with
-        the desk's EEPROM defaults."""
+        """Record the user's intended value for a setting."""
         self._desired_settings[key] = (value, frame)
 
     async def set_brightness(self, value: int) -> None:
@@ -345,11 +343,7 @@ class DeskyBleClient:
 
     async def restore_settings(self) -> None:
         """Re-apply any user-set settings that the desk reported differently
-        after a reconnect (i.e. the desk reverted to its EEPROM defaults).
-
-        Only sends frames for settings where the desk-reported value does not
-        match the desired value, avoiding redundant BLE writes.
-        """
+        after a reconnect."""
         if not self._desired_settings:
             return
 
