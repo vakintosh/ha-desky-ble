@@ -20,7 +20,6 @@ This integration requires the **Desky Bluetooth Controller**. Other controllers 
 ## Prerequisites
 - A Home Assistant instance with a functional Bluetooth adapter or an ESPHome Bluetooth Proxy.
 - A Desky standing desk equipped with the Bluetooth Controller.
-- Python 3.9+ (if running standalone scripts).
 
 ## Tested On
 This integration has been tested with the following Home Assistant environment:
@@ -61,23 +60,6 @@ Once the integration is installed:
 2. Click **Add Integration**.
 3. Search for **Desky BLE**.
 4. Follow the on-screen prompts to pair with your desk.
-
-## Protocol Documentation
-The implementation is based on the following BLE characteristics identified during the reverse engineering process (note that UUIDs vary depending on the specific controller variant):
-
-### Lierda Variant 1
-- **Service UUID:** `0000ff12-0000-1000-8000-00805f9b34fb`
-- **Command Characteristic:** `0000ff01-0000-1000-8000-00805f9b34fb`
-- **Notify Characteristic:** `0000ff02-0000-1000-8000-00805f9b34fb`
-
-### Lierda Variant 2
-- **Service UUID:** `0000fe60-0000-1000-8000-00805f9b34fb`
-- **Command Characteristic:** `0000fe61-0000-1000-8000-00805f9b34fb`
-- **Notify Characteristic:** `0000fe62-0000-1000-8000-00805f9b34fb`
-
-### Peilin Variant
-- **Service UUID:** `88121427-11e2-52a2-4615-ff00dec16800`
-- **Command / Notify Characteristic:** `88121427-11e2-52a2-4615-ff00dec16801`
 
 ## Troubleshooting
 
