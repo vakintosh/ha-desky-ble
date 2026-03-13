@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
 from homeassistant.const import CONF_ADDRESS, UnitOfLength
 from homeassistant.core import HomeAssistant
@@ -15,6 +18,10 @@ from .const import DEFAULT_MAX_HEIGHT_CM, DEFAULT_MIN_HEIGHT_CM, DOMAIN
 from .coordinator import DeskyCoordinator
 
 from desky_ble import height_cm_to_raw
+
+_LOGGER = logging.getLogger(__name__)
+
+DEBOUNCE_SECONDS = 0.5
 
 
 async def async_setup_entry(
@@ -55,12 +62,23 @@ class DeskyTargetHeight(CoordinatorEntity[DeskyCoordinator], NumberEntity):
         )
         self._attr_native_min_value = DEFAULT_MIN_HEIGHT_CM
         self._attr_native_max_value = DEFAULT_MAX_HEIGHT_CM
+        self._debounce_handle: asyncio.TimerHandle | None = None
 
     @property
     def native_value(self) -> float | None:
         return self.coordinator.desk_state.height_cm
 
     async def async_set_native_value(self, value: float) -> None:
+        if self._debounce_handle is not None:
+            self._debounce_handle.cancel()
+        loop = asyncio.get_running_loop()
+        self._debounce_handle = loop.call_later(
+            DEBOUNCE_SECONDS,
+            lambda: asyncio.ensure_future(self._send_height(value)),
+        )
+
+    async def _send_height(self, value: float) -> None:
+        """Actually send the height command after debounce."""
         raw = height_cm_to_raw(value)
         await self.coordinator.client.move_to_height(raw)
 

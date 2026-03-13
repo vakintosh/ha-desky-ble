@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
+import logging
+from collections.abc import Callable, Coroutine
+from typing import Any
+
 from homeassistant.components.select import SelectEntity
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
@@ -21,6 +26,10 @@ from .const import (
     TOUCH_MODE_REVERSE_MAP,
 )
 from .coordinator import DeskyCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+DEBOUNCE_SECONDS = 0.5
 
 
 async def async_setup_entry(
@@ -58,6 +67,7 @@ class DeskyLedColorSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, address)},
         )
+        self._debounce_handle: asyncio.TimerHandle | None = None
 
     @property
     def current_option(self) -> str | None:
@@ -65,10 +75,10 @@ class DeskyLedColorSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
         return LED_COLOR_MAP.get(val) if val is not None else None
 
     async def async_select_option(self, option: str) -> None:
-        """Set the LED color."""
+        """Set the LED color (debounced)."""
         code = LED_COLOR_REVERSE_MAP.get(option)
         if code is not None:
-            await self.coordinator.client.set_led_color(code)
+            _debounce_call(self, lambda: self.coordinator.client.set_led_color(code))
 
 
 class DeskyAntiCollisionSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
@@ -90,6 +100,7 @@ class DeskyAntiCollisionSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, address)},
         )
+        self._debounce_handle: asyncio.TimerHandle | None = None
 
     @property
     def current_option(self) -> str | None:
@@ -97,10 +108,12 @@ class DeskyAntiCollisionSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity
         return ANTI_COLLISION_MAP.get(val) if val is not None else None
 
     async def async_select_option(self, option: str) -> None:
-        """Set the anti-collision sensitivity."""
+        """Set the anti-collision sensitivity (debounced)."""
         code = ANTI_COLLISION_REVERSE_MAP.get(option)
         if code is not None:
-            await self.coordinator.client.set_anti_collision(code)
+            _debounce_call(
+                self, lambda: self.coordinator.client.set_anti_collision(code)
+            )
 
 
 class DeskyTouchModeSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
@@ -122,6 +135,7 @@ class DeskyTouchModeSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, address)},
         )
+        self._debounce_handle: asyncio.TimerHandle | None = None
 
     @property
     def current_option(self) -> str | None:
@@ -129,7 +143,21 @@ class DeskyTouchModeSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
         return TOUCH_MODE_MAP.get(val) if val is not None else None
 
     async def async_select_option(self, option: str) -> None:
-        """Set the touch mode."""
+        """Set the touch mode (debounced)."""
         code = TOUCH_MODE_REVERSE_MAP.get(option)
         if code is not None:
-            await self.coordinator.client.set_touch_mode(code)
+            _debounce_call(self, lambda: self.coordinator.client.set_touch_mode(code))
+
+
+def _debounce_call(
+    entity: DeskyLedColorSelect | DeskyAntiCollisionSelect | DeskyTouchModeSelect,
+    coro_factory: Callable[[], Coroutine[Any, Any, None]],
+) -> None:
+    """Cancel any pending debounce timer and schedule a new one."""
+    if entity._debounce_handle is not None:
+        entity._debounce_handle.cancel()
+    loop = asyncio.get_running_loop()
+    entity._debounce_handle = loop.call_later(
+        DEBOUNCE_SECONDS,
+        lambda: asyncio.ensure_future(coro_factory()),
+    )
