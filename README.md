@@ -4,7 +4,7 @@ A custom integration for Home Assistant that enables control of Desky-compatible
 ## Disclaimer
 This project is an independent community contribution and is not affiliated with, authorized, or endorsed by Desky®. It was created out of a genuine appreciation for the product and a desire to integrate it into a smart home environment.
 
-This integration communicates with your desk over local Bluetooth only — it does not bypass any cloud security, access any online services, or modify desk firmware. Use this software at your own risk; the author is not responsible for any damage to hardware, property, or personal injury resulting from its use.
+This integration communicates with your desk over local Bluetooth only , it does not bypass any cloud security, access any online services, or modify desk firmware. Use this software at your own risk; the author is not responsible for any damage to hardware, property, or personal injury resulting from its use.
 
 Interoperability research was conducted in accordance with Canada's *Copyright Act* (Section 30.6), which permits reverse engineering for the purpose of achieving interoperability between independently created programs.
 
@@ -86,8 +86,8 @@ The implementation is based on the following BLE characteristics identified duri
 | Desk not found during setup | Ensure the desk is powered on and the Bluetooth controller LED is blinking. Move the HA host or ESPHome Bluetooth proxy closer to the desk. |
 | Frequent disconnects | BLE range is limited (~10 m). An ESPHome Bluetooth proxy placed near the desk significantly improves reliability. |
 | Entities show *Unavailable* | The integration will automatically reconnect on the next poll cycle (default: 30 s). Check **Settings → System → Logs** for BLE errors. |
-| Presets not saving | Press the *Save Preset* button (disabled by default — enable it first in the entity settings). |
-| Settings reset after reconnect | This is expected BLE behavior — the integration automatically restores your preferred settings after each reconnect. |
+| Presets not saving | Press the *Save Preset* button (disabled by default , enable it first in the entity settings). |
+| Settings reset after reconnect | This is expected BLE behavior , the integration automatically restores your preferred settings after each reconnect. |
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details. This license includes a standard limitation of liability clause.
