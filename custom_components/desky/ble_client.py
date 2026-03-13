@@ -1,9 +1,3 @@
-"""Desky BLE client – handles connection, service discovery and commands.
-
-Designed to work with Home Assistant's BLE proxy infrastructure
-(bleak + bleak-retry-connector).
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -84,9 +78,9 @@ _SAVE_MEMORY_CMDS: dict[int, bytes] = {
 class ControllerVariant(Enum):
     """BLE controller type detected from GATT services."""
 
-    LIERDA1 = auto()  # service ff12
-    LIERDA2 = auto()  # service fe60
-    PEILIN = auto()  # service 88121427
+    LIERDA1 = auto()
+    LIERDA2 = auto()
+    PEILIN = auto()
 
 
 class DeskyBleClient:
@@ -117,7 +111,6 @@ class DeskyBleClient:
         self._state = DeskState()
         self._state_callback = state_callback
         self._lock = asyncio.Lock()
-        # Maps setting key → (desired_value, frame) for post-reconnect restore.
         self._desired_settings: dict[str, tuple[int, bytes]] = {}
 
     @property
@@ -132,9 +125,6 @@ class DeskyBleClient:
     def is_connected(self) -> bool:
         return self._client is not None and self._client.is_connected
 
-    # ------------------------------------------------------------------
-    # Connection
-    # ------------------------------------------------------------------
     async def connect(self) -> None:
         """Establish BLE connection with retry logic."""
         self._client = await establish_connection(
@@ -156,9 +146,6 @@ class DeskyBleClient:
             await self._client.disconnect()
         self._client = None
 
-    # ------------------------------------------------------------------
-    # Service detection
-    # ------------------------------------------------------------------
     async def _detect_variant(self) -> None:
         """Identify the controller variant from advertised GATT services."""
         if self._client is None:
@@ -186,7 +173,6 @@ class DeskyBleClient:
             )
             raise RuntimeError(msg)
 
-        # Peilin requires a login handshake
         if self._variant == ControllerVariant.PEILIN:
             await self._peilin_login(service_uuids)
 
@@ -205,9 +191,6 @@ class DeskyBleClient:
         except Exception:
             _LOGGER.warning("Failed to send Peilin login handshake", exc_info=True)
 
-    # ------------------------------------------------------------------
-    # Notifications
-    # ------------------------------------------------------------------
     async def _setup_notifications(self) -> None:
         if self._client is None or self._read_char is None:
             return
@@ -221,9 +204,6 @@ class DeskyBleClient:
         if parse_notification(data, self._state) and self._state_callback:
             self._state_callback(self._state)
 
-    # ------------------------------------------------------------------
-    # Low-level send
-    # ------------------------------------------------------------------
     async def _send(self, frame: bytes) -> None:
         async with self._lock:
             if self._client is None or self._write_char is None:
@@ -247,17 +227,14 @@ class DeskyBleClient:
             if self._client is None or self._write_char is None:
                 msg = "Not connected"
                 raise RuntimeError(msg)
-            # Step 1 – handshake (same as app's handShaScheduleRunTask)
             await self._client.write_gatt_char(
                 self._write_char, CMD_HANDSHAKE, response=False
             )
             _LOGGER.debug("TX (handshake) → %s", CMD_HANDSHAKE.hex())
             await asyncio.sleep(0.15)
-            # Step 2 – first write with acknowledgement
             await self._client.write_gatt_char(self._write_char, frame, response=True)
             _LOGGER.debug("TX (setting #1) → %s", frame.hex())
             await asyncio.sleep(0.20)
-            # Step 3 – duplicate write (APK reliability pattern)
             await self._client.write_gatt_char(self._write_char, frame, response=True)
             _LOGGER.debug("TX (setting #2) → %s", frame.hex())
 
@@ -271,9 +248,6 @@ class DeskyBleClient:
         """
         await self._send_setting(frame)
 
-    # ------------------------------------------------------------------
-    # High-level desk commands
-    # ------------------------------------------------------------------
     async def move_up(self) -> None:
         await self._send(CMD_MOVE_UP)
 
@@ -306,9 +280,6 @@ class DeskyBleClient:
             raise ValueError(msg)
         await self._send_preset(frame)
 
-    # ------------------------------------------------------------------
-    # Status queries
-    # ------------------------------------------------------------------
     async def request_status(self) -> None:
         await self._send(CMD_GET_STATUS)
 
@@ -325,9 +296,6 @@ class DeskyBleClient:
             await self._send(frame)
             await asyncio.sleep(0.1)
 
-    # ------------------------------------------------------------------
-    # Settings setters
-    # ------------------------------------------------------------------
     def _remember(self, key: str, value: int, frame: bytes) -> None:
         """Record the user's intended value for a setting so it can be
         restored automatically after a BLE reconnect overwrites it with

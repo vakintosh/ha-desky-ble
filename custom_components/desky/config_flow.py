@@ -1,5 +1,3 @@
-"""Config flow for Desky Standing Desk (BLE)."""
-
 from __future__ import annotations
 
 import logging
@@ -44,9 +42,6 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._discovery_info: BluetoothServiceInfoBleak | None = None
 
-    # ------------------------------------------------------------------
-    # Bluetooth passive discovery
-    # ------------------------------------------------------------------
     async def async_step_bluetooth(
         self,
         discovery_info: BluetoothServiceInfoBleak,
@@ -79,9 +74,6 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
             },
         )
 
-    # ------------------------------------------------------------------
-    # Manual entry
-    # ------------------------------------------------------------------
     async def async_step_user(
         self,
         user_input: dict[str, Any] | None = None,
@@ -98,7 +90,6 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
                 data={CONF_ADDRESS: address},
             )
 
-        # Try to show discovered devices as suggestions
         discovered = list(async_discovered_service_info(self.hass))
         desks = [d for d in discovered if _match_service_uuids(d)]
 
@@ -111,9 +102,6 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    # ------------------------------------------------------------------
-    # Options flow
-    # ------------------------------------------------------------------
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> DeskyOptionsFlow:

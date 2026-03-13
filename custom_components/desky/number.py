@@ -1,5 +1,3 @@
-"""Desky number platform — target height and reminder timer."""
-
 from __future__ import annotations
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
@@ -93,8 +91,7 @@ class DeskyReminder(CoordinatorEntity[DeskyCoordinator], NumberEntity):
 
     @property
     def native_value(self) -> float | None:
-        # The reminder value is write-only on the hardware; we have no read-back.
-        # Return None so HA shows the entity as "unknown" until set.
+
         return None
 
     async def async_set_native_value(self, value: float) -> None:

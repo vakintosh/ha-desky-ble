@@ -1,5 +1,3 @@
-"""Desky switch entities (child lock, vibration, LED lighting)."""
-
 from __future__ import annotations
 
 from typing import Any
