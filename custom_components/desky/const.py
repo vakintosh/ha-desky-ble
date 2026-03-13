@@ -1,5 +1,3 @@
-"""Constants for the Desky standing desk integration."""
-
 from __future__ import annotations
 
 DOMAIN = "desky"
