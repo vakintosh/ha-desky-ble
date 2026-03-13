@@ -12,11 +12,27 @@
                 "data": {
                     "address": "Bluetooth address"
                 }
+            },
+            "reconfigure": {
+                "title": "Reconfigure Desky Standing Desk",
+                "description": "Update the Bluetooth MAC address of your Desky desk.",
+                "data": {
+                    "address": "Bluetooth address"
+                }
+            },
+            "reauth_confirm": {
+                "title": "Re-authenticate Desky Standing Desk",
+                "description": "The desk could not be reached. Enter the current Bluetooth MAC address to re-authenticate.",
+                "data": {
+                    "address": "Bluetooth address"
+                }
             }
         },
         "abort": {
             "already_configured": "This desk is already configured.",
-            "no_devices_found": "No Desky desks were found nearby."
+            "no_devices_found": "No Desky desks were found nearby.",
+            "reconfigure_successful": "Reconfiguration successful.",
+            "reauth_successful": "Re-authentication successful."
         }
     },
     "options": {
