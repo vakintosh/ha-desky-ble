@@ -14,9 +14,12 @@ Reverse engineering was performed solely for the purpose of achieving interopera
 - **Real-time Monitoring**: View current desk height and connection status.
 - **Local Control**: Operates entirely over local BLE without the need for external cloud APIs.
 
+## Compatible Hardware
+This integration requires the **Desky Bluetooth Controller**. Other controllers or desk brands are not supported.
+
 ## Prerequisites
 - A Home Assistant instance with a functional Bluetooth adapter or an ESPHome Bluetooth Proxy.
-- A Desky-compatible standing desk with Bluetooth connectivity.
+- A Desky standing desk equipped with the Bluetooth Controller.
 - Python 3.9+ (if running standalone scripts).
 
 ## Tested On
