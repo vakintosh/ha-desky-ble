@@ -8,6 +8,7 @@ from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -37,6 +38,7 @@ class _DeskySwitch(CoordinatorEntity[DeskyCoordinator], SwitchEntity):
 
     _attr_has_entity_name = True
     _attr_device_class = SwitchDeviceClass.SWITCH
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -54,8 +56,7 @@ class _DeskySwitch(CoordinatorEntity[DeskyCoordinator], SwitchEntity):
 class DeskyChildLockSwitch(_DeskySwitch):
     """Child lock on / off."""
 
-    _attr_name = "Child Lock"
-    _attr_icon = "mdi:lock"
+    _attr_translation_key = "child_lock"
 
     def __init__(
         self,
@@ -82,8 +83,7 @@ class DeskyChildLockSwitch(_DeskySwitch):
 class DeskyVibrationSwitch(_DeskySwitch):
     """Vibration on / off."""
 
-    _attr_name = "Vibration"
-    _attr_icon = "mdi:vibrate"
+    _attr_translation_key = "vibration"
 
     def __init__(
         self,
@@ -110,8 +110,7 @@ class DeskyVibrationSwitch(_DeskySwitch):
 class DeskyLightingSwitch(_DeskySwitch):
     """LED lighting on / off."""
 
-    _attr_name = "LED Lighting"
-    _attr_icon = "mdi:led-on"
+    _attr_translation_key = "led_lighting"
 
     def __init__(
         self,

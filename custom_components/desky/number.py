@@ -6,6 +6,7 @@ from homeassistant.components.number import NumberDeviceClass, NumberEntity, Num
 from homeassistant.const import CONF_ADDRESS, UnitOfLength
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -39,8 +40,7 @@ class DeskyTargetHeight(CoordinatorEntity[DeskyCoordinator], NumberEntity):
     _attr_mode = NumberMode.SLIDER
     _attr_native_step = 0.1
     _attr_has_entity_name = True
-    _attr_name = "Target Height"
-    _attr_icon = "mdi:arrow-expand-vertical"
+    _attr_translation_key = "target_height"
 
     def __init__(
         self,
@@ -78,8 +78,8 @@ class DeskyReminder(CoordinatorEntity[DeskyCoordinator], NumberEntity):
     """
 
     _attr_has_entity_name = True
-    _attr_name = "Reminder"
-    _attr_icon = "mdi:timer-alert"
+    _attr_translation_key = "reminder"
+    _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.SLIDER
     _attr_native_min_value = 0
     _attr_native_max_value = 120

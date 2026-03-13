@@ -23,13 +23,13 @@ LED_COLOR_PARTY = 6
 LED_COLOR_OFF = 7
 
 LED_COLOR_MAP: dict[int, str] = {
-    LED_COLOR_WHITE: "White",
-    LED_COLOR_RED: "Red",
-    LED_COLOR_GREEN: "Green",
-    LED_COLOR_BLUE: "Blue",
-    LED_COLOR_YELLOW: "Yellow",
-    LED_COLOR_PARTY: "Party Mode",
-    LED_COLOR_OFF: "Off",
+    LED_COLOR_WHITE: "white",
+    LED_COLOR_RED: "red",
+    LED_COLOR_GREEN: "green",
+    LED_COLOR_BLUE: "blue",
+    LED_COLOR_YELLOW: "yellow",
+    LED_COLOR_PARTY: "party_mode",
+    LED_COLOR_OFF: "off",
 }
 
 LED_COLOR_REVERSE_MAP: dict[str, int] = {v: k for k, v in LED_COLOR_MAP.items()}
@@ -39,9 +39,9 @@ ANTI_COLLISION_MEDIUM = 2
 ANTI_COLLISION_LOW = 3
 
 ANTI_COLLISION_MAP: dict[int, str] = {
-    ANTI_COLLISION_HIGH: "High",
-    ANTI_COLLISION_MEDIUM: "Medium",
-    ANTI_COLLISION_LOW: "Low",
+    ANTI_COLLISION_HIGH: "high",
+    ANTI_COLLISION_MEDIUM: "medium",
+    ANTI_COLLISION_LOW: "low",
 }
 
 ANTI_COLLISION_REVERSE_MAP: dict[str, int] = {
@@ -52,8 +52,8 @@ TOUCH_MODE_ONE_PRESS = 0
 TOUCH_MODE_PRESS_AND_HOLD = 1
 
 TOUCH_MODE_MAP: dict[int, str] = {
-    TOUCH_MODE_ONE_PRESS: "One Press",
-    TOUCH_MODE_PRESS_AND_HOLD: "Press and Hold",
+    TOUCH_MODE_ONE_PRESS: "one_press",
+    TOUCH_MODE_PRESS_AND_HOLD: "press_and_hold",
 }
 
 TOUCH_MODE_REVERSE_MAP: dict[str, int] = {v: k for k, v in TOUCH_MODE_MAP.items()}

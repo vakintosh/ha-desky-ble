@@ -35,8 +35,7 @@ class DeskyHeightSensor(CoordinatorEntity[DeskyCoordinator], SensorEntity):
     _attr_device_class = SensorDeviceClass.DISTANCE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
-    _attr_name = "Height"
-    _attr_icon = "mdi:human-male-height-variant"
+    _attr_translation_key = "height"
 
     def __init__(
         self,

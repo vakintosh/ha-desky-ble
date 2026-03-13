@@ -34,7 +34,6 @@ class DeskyRecallPresetButton(CoordinatorEntity[DeskyCoordinator], ButtonEntity)
     """Button that recalls a stored memory preset."""
 
     _attr_has_entity_name = True
-    _attr_icon = "mdi:bookmark-outline"
 
     def __init__(
         self,
@@ -46,7 +45,7 @@ class DeskyRecallPresetButton(CoordinatorEntity[DeskyCoordinator], ButtonEntity)
         self._slot = slot
         address = entry.data[CONF_ADDRESS]
         self._attr_unique_id = f"{address}_recall_preset_{slot}"
-        self._attr_name = f"Preset {slot}"
+        self._attr_translation_key = f"recall_preset_{slot}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, address)},
         )
@@ -60,7 +59,6 @@ class DeskySavePresetButton(CoordinatorEntity[DeskyCoordinator], ButtonEntity):
     """Button that saves the current height to a memory slot."""
 
     _attr_has_entity_name = True
-    _attr_icon = "mdi:bookmark-plus"
     _attr_entity_registry_enabled_default = False
 
     def __init__(
@@ -73,7 +71,7 @@ class DeskySavePresetButton(CoordinatorEntity[DeskyCoordinator], ButtonEntity):
         self._slot = slot
         address = entry.data[CONF_ADDRESS]
         self._attr_unique_id = f"{address}_save_preset_{slot}"
-        self._attr_name = f"Save Preset {slot}"
+        self._attr_translation_key = f"save_preset_{slot}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, address)},
         )

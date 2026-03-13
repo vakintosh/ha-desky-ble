@@ -1,0 +1,31 @@
+{
+    "entity": {
+        "button": {
+            "recall_preset_1": { "default": "mdi:bookmark-outline" },
+            "recall_preset_2": { "default": "mdi:bookmark-outline" },
+            "recall_preset_3": { "default": "mdi:bookmark-outline" },
+            "recall_preset_4": { "default": "mdi:bookmark-outline" },
+            "save_preset_1": { "default": "mdi:bookmark-plus" },
+            "save_preset_2": { "default": "mdi:bookmark-plus" },
+            "save_preset_3": { "default": "mdi:bookmark-plus" },
+            "save_preset_4": { "default": "mdi:bookmark-plus" }
+        },
+        "number": {
+            "target_height": { "default": "mdi:arrow-expand-vertical" },
+            "reminder": { "default": "mdi:timer-alert" }
+        },
+        "select": {
+            "led_color": { "default": "mdi:palette" },
+            "anti_collision": { "default": "mdi:shield-alert" },
+            "touch_mode": { "default": "mdi:gesture-tap" }
+        },
+        "sensor": {
+            "height": { "default": "mdi:human-male-height-variant" }
+        },
+        "switch": {
+            "child_lock": { "default": "mdi:lock" },
+            "vibration": { "default": "mdi:vibrate" },
+            "led_lighting": { "default": "mdi:led-on" }
+        }
+    }
+}

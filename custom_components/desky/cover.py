@@ -40,7 +40,7 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
         | CoverEntityFeature.SET_POSITION
     )
     _attr_has_entity_name = True
-    _attr_name = "Desk"
+    _attr_name = None
 
     def __init__(
         self,
