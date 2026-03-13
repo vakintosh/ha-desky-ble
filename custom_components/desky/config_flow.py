@@ -1,3 +1,5 @@
+"""Config flow for Desky BLE standing desk integration."""
+
 from __future__ import annotations
 
 import logging
@@ -40,6 +42,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self) -> None:
+        """Initialise the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
 
     async def async_step_bluetooth(
@@ -105,19 +108,18 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> DeskyOptionsFlow:
-        return DeskyOptionsFlow(config_entry)
+        """Return the options flow handler."""
+        return DeskyOptionsFlow()
 
 
 class DeskyOptionsFlow(OptionsFlow):
     """Options flow for Desky integration."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self._config_entry = config_entry
-
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
+        """Handle options flow init step."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -127,11 +129,11 @@ class DeskyOptionsFlow(OptionsFlow):
                 {
                     vol.Optional(
                         CONF_UNIT,
-                        default=self._config_entry.options.get(CONF_UNIT, "cm"),
+                        default=self.config_entry.options.get(CONF_UNIT, "cm"),
                     ): vol.In(["cm", "inches"]),
                     vol.Optional(
                         CONF_POLL_INTERVAL,
-                        default=self._config_entry.options.get(
+                        default=self.config_entry.options.get(
                             CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
                         ),
                     ): vol.All(int, vol.Range(min=5, max=300)),

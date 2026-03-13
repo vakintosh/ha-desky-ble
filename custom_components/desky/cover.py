@@ -1,3 +1,5 @@
+"""Support for Desky BLE standing desk cover platform."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -6,11 +8,13 @@ from homeassistant.components.cover import (
     CoverEntity,
     CoverEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeskyConfigEntry
 from .const import DEFAULT_MAX_HEIGHT_CM, DEFAULT_MIN_HEIGHT_CM, DOMAIN
 from .coordinator import DeskyCoordinator
 
@@ -19,11 +23,11 @@ from desky_ble import DeskState
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: DeskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([DeskyCover(coordinator, entry)])
+    """Set up Desky cover platform."""
+    async_add_entities([DeskyCover(entry.runtime_data, entry)])
 
 
 class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
@@ -41,16 +45,17 @@ class DeskyCover(CoordinatorEntity[DeskyCoordinator], CoverEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_cover"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-            "name": entry.title,
-            "manufacturer": "Desky",
-            "model": "Standing Desk",
-        }
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_cover"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+            name=entry.title,
+            manufacturer="Desky",
+            model="Standing Desk",
+        )
         self._min_raw = int(DEFAULT_MIN_HEIGHT_CM * 10)
         self._max_raw = int(DEFAULT_MAX_HEIGHT_CM * 10)
         self._prev_height_raw: int | None = None

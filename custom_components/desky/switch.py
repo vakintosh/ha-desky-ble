@@ -1,23 +1,28 @@
+"""Support for Desky BLE standing desk switch platform."""
+
 from __future__ import annotations
 
 from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeskyConfigEntry
 from .const import DOMAIN
 from .coordinator import DeskyCoordinator
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: DeskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Desky switch platform."""
+    coordinator = entry.runtime_data
     async_add_entities(
         [
             DeskyChildLockSwitch(coordinator, entry),
@@ -36,10 +41,14 @@ class _DeskySwitch(CoordinatorEntity[DeskyCoordinator], SwitchEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        address = entry.data[CONF_ADDRESS]
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
+        self._address = address
 
 
 class DeskyChildLockSwitch(_DeskySwitch):
@@ -51,10 +60,10 @@ class DeskyChildLockSwitch(_DeskySwitch):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = f"{entry.entry_id}_child_lock"
+        self._attr_unique_id = f"{self._address}_child_lock"
 
     @property
     def is_on(self) -> bool | None:
@@ -62,9 +71,11 @@ class DeskyChildLockSwitch(_DeskySwitch):
         return bool(val) if val is not None else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on the child lock."""
         await self.coordinator.client.set_lock(1)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off the child lock."""
         await self.coordinator.client.set_lock(0)
 
 
@@ -77,10 +88,10 @@ class DeskyVibrationSwitch(_DeskySwitch):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = f"{entry.entry_id}_vibration"
+        self._attr_unique_id = f"{self._address}_vibration"
 
     @property
     def is_on(self) -> bool | None:
@@ -88,9 +99,11 @@ class DeskyVibrationSwitch(_DeskySwitch):
         return bool(val) if val is not None else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on vibration."""
         await self.coordinator.client.set_vibration(1)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off vibration."""
         await self.coordinator.client.set_vibration(0)
 
 
@@ -103,10 +116,10 @@ class DeskyLightingSwitch(_DeskySwitch):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator, entry)
-        self._attr_unique_id = f"{entry.entry_id}_lighting"
+        self._attr_unique_id = f"{self._address}_lighting"
 
     @property
     def is_on(self) -> bool | None:
@@ -114,7 +127,9 @@ class DeskyLightingSwitch(_DeskySwitch):
         return bool(val) if val is not None else None
 
     async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on LED lighting."""
         await self.coordinator.client.set_lighting(1)
 
     async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off LED lighting."""
         await self.coordinator.client.set_lighting(0)

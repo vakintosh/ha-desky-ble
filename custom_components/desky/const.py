@@ -1,3 +1,5 @@
+"""Constants for the Desky BLE standing desk integration."""
+
 from __future__ import annotations
 
 from desky_ble.ble_client import ALL_SERVICE_UUIDS

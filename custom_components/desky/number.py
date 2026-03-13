@@ -1,12 +1,15 @@
+"""Support for Desky BLE standing desk number platform."""
+
 from __future__ import annotations
 
 from homeassistant.components.number import NumberDeviceClass, NumberEntity, NumberMode
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength
+from homeassistant.const import CONF_ADDRESS, UnitOfLength
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeskyConfigEntry
 from .const import DEFAULT_MAX_HEIGHT_CM, DEFAULT_MIN_HEIGHT_CM, DOMAIN
 from .coordinator import DeskyCoordinator
 
@@ -15,10 +18,11 @@ from desky_ble import height_cm_to_raw
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: DeskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Desky number platform."""
+    coordinator = entry.runtime_data
     async_add_entities(
         [
             DeskyTargetHeight(coordinator, entry),
@@ -41,13 +45,14 @@ class DeskyTargetHeight(CoordinatorEntity[DeskyCoordinator], NumberEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_target_height"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-        }
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_target_height"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
         self._attr_native_min_value = DEFAULT_MIN_HEIGHT_CM
         self._attr_native_max_value = DEFAULT_MAX_HEIGHT_CM
 
@@ -84,11 +89,14 @@ class DeskyReminder(CoordinatorEntity[DeskyCoordinator], NumberEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_reminder"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_reminder"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
 
     @property
     def native_value(self) -> float | None:

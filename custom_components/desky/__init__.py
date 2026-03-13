@@ -1,3 +1,5 @@
+"""Support for Desky BLE standing desks."""
+
 from __future__ import annotations
 
 import logging
@@ -8,22 +10,24 @@ from homeassistant.const import CONF_ADDRESS, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
-from .const import CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, DOMAIN
+from .const import CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
 from .coordinator import DeskyCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
+type DeskyConfigEntry = ConfigEntry[DeskyCoordinator]
+
 PLATFORMS: list[Platform] = [
-    Platform.COVER,
-    Platform.SENSOR,
-    Platform.NUMBER,
     Platform.BUTTON,
+    Platform.COVER,
+    Platform.NUMBER,
     Platform.SELECT,
+    Platform.SENSOR,
     Platform.SWITCH,
 ]
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: DeskyConfigEntry) -> bool:
     """Set up Desky from a config entry."""
     address: str = entry.data[CONF_ADDRESS]
     poll_interval: int = entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
@@ -37,7 +41,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     coordinator = DeskyCoordinator(hass, ble_device, poll_interval)
     await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_update_options))
@@ -45,14 +49,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: DeskyConfigEntry) -> bool:
     """Unload a config entry."""
     if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        coordinator: DeskyCoordinator = hass.data[DOMAIN].pop(entry.entry_id)
-        await coordinator.async_shutdown()
+        await entry.runtime_data.async_shutdown()
     return unload_ok
 
 
-async def _async_update_options(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def _async_update_options(
+    hass: HomeAssistant, entry: DeskyConfigEntry
+) -> None:
     """Handle options update by reloading the entry."""
     await hass.config_entries.async_reload(entry.entry_id)

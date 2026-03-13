@@ -1,11 +1,15 @@
+"""Support for Desky BLE standing desk select platform."""
+
 from __future__ import annotations
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import CONF_ADDRESS
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeskyConfigEntry
 from .const import (
     ANTI_COLLISION_MAP,
     ANTI_COLLISION_REVERSE_MAP,
@@ -20,10 +24,11 @@ from .coordinator import DeskyCoordinator
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: DeskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
+    """Set up Desky select platform."""
+    coordinator = entry.runtime_data
     async_add_entities(
         [
             DeskyLedColorSelect(coordinator, entry),
@@ -44,11 +49,14 @@ class DeskyLedColorSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_led_color"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_led_color"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
 
     @property
     def current_option(self) -> str | None:
@@ -72,11 +80,14 @@ class DeskyAntiCollisionSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_anti_collision"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_anti_collision"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
 
     @property
     def current_option(self) -> str | None:
@@ -100,11 +111,14 @@ class DeskyTouchModeSelect(CoordinatorEntity[DeskyCoordinator], SelectEntity):
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_touch_mode"
-        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_touch_mode"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
 
     @property
     def current_option(self) -> str | None:
