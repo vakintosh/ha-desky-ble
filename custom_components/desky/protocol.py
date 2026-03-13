@@ -6,9 +6,6 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Constants
-# ---------------------------------------------------------------------------
 HEADER_TX = bytes([0xF1, 0xF1])
 HEADER_RX = bytes([0xF2, 0xF2])
 FOOTER_TX = 0x7E
