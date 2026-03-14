@@ -1,3 +1,5 @@
+"""Support for Desky BLE standing desk sensor platform."""
+
 from __future__ import annotations
 
 from homeassistant.components.sensor import (
@@ -5,24 +7,26 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfLength
+from homeassistant.const import CONF_ADDRESS, UnitOfLength
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import DeskyConfigEntry
 from .const import DOMAIN
 from .coordinator import DeskyCoordinator
-from .protocol import height_is_cm
+
+from desky_ble import height_is_cm
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: DeskyConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: DeskyCoordinator = hass.data[DOMAIN][entry.entry_id]
-    async_add_entities([DeskyHeightSensor(coordinator, entry)])
+    """Set up Desky sensor platform."""
+    async_add_entities([DeskyHeightSensor(entry.runtime_data, entry)])
 
 
 class DeskyHeightSensor(CoordinatorEntity[DeskyCoordinator], SensorEntity):
@@ -31,19 +35,19 @@ class DeskyHeightSensor(CoordinatorEntity[DeskyCoordinator], SensorEntity):
     _attr_device_class = SensorDeviceClass.DISTANCE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_has_entity_name = True
-    _attr_name = "Height"
-    _attr_icon = "mdi:human-male-height-variant"
+    _attr_translation_key = "height"
 
     def __init__(
         self,
         coordinator: DeskyCoordinator,
-        entry: ConfigEntry,
+        entry: DeskyConfigEntry,
     ) -> None:
         super().__init__(coordinator)
-        self._attr_unique_id = f"{entry.entry_id}_height"
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, entry.entry_id)},
-        }
+        address = entry.data[CONF_ADDRESS]
+        self._attr_unique_id = f"{address}_height"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, address)},
+        )
 
     @property
     def native_value(self) -> float | None:

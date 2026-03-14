@@ -1,3 +1,5 @@
+"""Config flow for Desky BLE standing desk integration."""
+
 from __future__ import annotations
 
 import logging
@@ -40,6 +42,7 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
     def __init__(self) -> None:
+        """Initialise the config flow."""
         self._discovery_info: BluetoothServiceInfoBleak | None = None
 
     async def async_step_bluetooth(
@@ -102,22 +105,61 @@ class DeskyConfigFlow(ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Handle reconfiguration of the BLE address."""
+        if user_input is not None:
+            return self.async_update_reload_and_abort(
+                self._get_reconfigure_entry(),
+                data_updates={CONF_ADDRESS: user_input[CONF_ADDRESS]},
+            )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): str}),
+        )
+
+    async def async_step_reauth(
+        self,
+        entry_data: dict[str, Any],
+    ) -> ConfigFlowResult:
+        """Handle re-authentication when the BLE device can no longer be reached."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> ConfigFlowResult:
+        """Confirm re-authentication with a new BLE address."""
+        if user_input is not None:
+            reauth_entry = self._get_reauth_entry()
+            return self.async_update_reload_and_abort(
+                reauth_entry,
+                data_updates={CONF_ADDRESS: user_input[CONF_ADDRESS]},
+            )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema({vol.Required(CONF_ADDRESS): str}),
+        )
+
     @staticmethod
     @callback
     def async_get_options_flow(config_entry: ConfigEntry) -> DeskyOptionsFlow:
-        return DeskyOptionsFlow(config_entry)
+        """Return the options flow handler."""
+        return DeskyOptionsFlow()
 
 
 class DeskyOptionsFlow(OptionsFlow):
     """Options flow for Desky integration."""
 
-    def __init__(self, config_entry: ConfigEntry) -> None:
-        self._config_entry = config_entry
-
     async def async_step_init(
         self,
         user_input: dict[str, Any] | None = None,
     ) -> ConfigFlowResult:
+        """Handle options flow init step."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
@@ -127,11 +169,11 @@ class DeskyOptionsFlow(OptionsFlow):
                 {
                     vol.Optional(
                         CONF_UNIT,
-                        default=self._config_entry.options.get(CONF_UNIT, "cm"),
+                        default=self.config_entry.options.get(CONF_UNIT, "cm"),
                     ): vol.In(["cm", "inches"]),
                     vol.Optional(
                         CONF_POLL_INTERVAL,
-                        default=self._config_entry.options.get(
+                        default=self.config_entry.options.get(
                             CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
                         ),
                     ): vol.All(int, vol.Range(min=5, max=300)),

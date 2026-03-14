@@ -1,28 +1,51 @@
 [project]
 name = "ha-desky-ble"
-version = "0.1.0"
+version = "0.2.0"
 description = "Home Assistant integration for Desky Standing Desk (BLE)"
-requires-python = ">=3.12"
+requires-python = ">=3.13.2"
 dependencies = [
-    "bleak>=2.1.1",
-    "bleak-retry-connector>=4.5.0",
+    "bleak==2.1.1",
+    "bleak-retry-connector==4.5.0",
+    "desky-ble==0.1.2",
 ]
 
 [tool.uv]
 dev-dependencies = [
-    "basedpyright>=1.38.1",
-    "homeassistant<=2026.2.3",
-    "pytest>=9.0.2",
-    "pytest-asyncio>=1.3.0",
-    "ruff>=0.15.1",
+    "basedpyright==1.38.1",
+    "homeassistant==2026.2.3",
+    "pytest==9.0.2",
+    "pytest-asyncio==1.3.0",
+    "ruff==0.15.1",
 ]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 88
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B", "SIM"]
+select = [
+    "E",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "LOG",   
+    "G",     
+    "TRY",   
+    "ASYNC", 
+    "T20",   
+    "PIE",   
+    "RET",   
+    "SLF",   
+    "RUF",   
+]
+ignore = [
+    "RUF012",  
+    "TRY003",  
+    "SLF001",  
+    "RET504",  
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

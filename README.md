@@ -10,15 +10,20 @@ Interoperability research was conducted in accordance with Canada's *Copyright A
 
 ## Features
 - **Height Control**: Set and adjust desk height directly from Home Assistant.
-- **Presets**: Trigger existing desk memory positions.
+- **Presets**: Trigger and save desk memory positions (4 slots).
 - **Real-time Monitoring**: View current desk height and connection status.
-- **Local Control**: Operates entirely over local BLE without the need for external cloud APIs.
+- **Settings Control**: LED color, anti-collision sensitivity, touch mode, child lock, vibration, and LED lighting.
+- **Settings Persistence**: User-configured settings are automatically restored after BLE reconnects.
+- **Local Control**: Operates entirely over local BLE — no cloud APIs or internet required.
+- **Translatable UI**: Entity names and select options use Home Assistant's translation framework.
+- **Reconfigure & Re-auth**: Update the BLE address post-setup without removing the device.
 
 ## Compatible Hardware
 This integration requires the **Desky Bluetooth Controller**. Other controllers or desk brands are not supported.
 
 ## Prerequisites
-- A Home Assistant instance with a functional Bluetooth adapter or an ESPHome Bluetooth Proxy.
+- Home Assistant 2026.2+ with Python 3.13.2+.
+- A functional Bluetooth adapter or an ESPHome Bluetooth Proxy.
 - A Desky standing desk equipped with the Bluetooth Controller.
 
 ## Tested On
@@ -32,20 +37,23 @@ This integration has been tested with the following Home Assistant environment:
 ## Entities
 Once configured, the integration creates the following entities for your desk:
 
-| Entity | Type | Description |
-|--------|------|-------------|
-| Height | Sensor | Current desk height in cm or inches |
-| Desk | Cover | Open (up) / Close (down) / Stop / Set position |
-| Target Height | Number | Move to a specific height (slider) |
-| Reminder | Number | Inactivity reminder timer (0–120 min) |
-| Preset 1–4 | Button | Recall a saved memory position |
-| Save Preset 1–4 | Button | Save the current height to a preset slot (disabled by default) |
-| LED Color | Select | Set LED strip color |
-| Anti-Collision Sensitivity | Select | High / Medium / Low |
-| Touch Mode | Select | One Press / Press and Hold |
-| Child Lock | Switch | Enable or disable the physical controls |
-| Vibration | Switch | Toggle vibration feedback |
-| LED Lighting | Switch | Toggle the LED strip on/off |
+| Entity | Type | Category | Description |
+|--------|------|----------|-------------|
+| Desk | Cover | Controls | Open (up) / Close (down) / Stop / Set position |
+| Target Height | Number | Controls | Move to a specific height via slider (debounced) |
+| Preset 1–4 | Button | Controls | Recall a saved memory position |
+| Save Preset 1–4 | Button | Controls | Save current height to a preset slot (disabled by default) |
+| Height | Sensor | Sensors | Current desk height in cm or inches |
+| Reminder | Number | Configuration | Inactivity reminder timer (0–120 min) |
+| LED Color | Select | Configuration | Set LED strip color (debounced) |
+| Anti-Collision Sensitivity | Select | Configuration | High / Medium / Low (debounced) |
+| Touch Mode | Select | Configuration | One Press / Press and Hold (debounced) |
+| Child Lock | Switch | Configuration | Enable or disable the physical controls |
+| Vibration | Switch | Configuration | Toggle vibration feedback |
+| LED Lighting | Switch | Configuration | Toggle the LED strip on/off |
+
+## Architecture
+The BLE protocol layer (frame encoding, command opcodes, notification parsing, and connection management) lives in a separate [`desky-ble`](https://pypi.org/project/desky-ble/) Python package. The Home Assistant integration imports it as a runtime dependency — this keeps the integration focused on HA platform glue and makes the BLE logic reusable outside HA.
 
 ## Installation
 ### Manual Installation
@@ -68,8 +76,9 @@ Once the integration is installed:
 | Desk not found during setup | Ensure the desk is powered on and the Bluetooth controller LED is blinking. Move the HA host or ESPHome Bluetooth proxy closer to the desk. |
 | Frequent disconnects | BLE range is limited (~10 m). An ESPHome Bluetooth proxy placed near the desk significantly improves reliability. |
 | Entities show *Unavailable* | The integration will automatically reconnect on the next poll cycle (default: 30 s). Check **Settings → System → Logs** for BLE errors. |
-| Presets not saving | Press the *Save Preset* button (disabled by default , enable it first in the entity settings). |
-| Settings reset after reconnect | This is expected BLE behavior , the integration automatically restores your preferred settings after each reconnect. |
+| Presets not saving | Press the *Save Preset* button (disabled by default — enable it first in the entity settings). |
+| Settings reset after reconnect | This is expected BLE behavior — the integration automatically restores your preferred settings after each reconnect. |
+| BLE address changed | Use **Settings → Devices & Services → Desky → Configure → Reconfigure** to update the address without re-adding the device. |
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details. This license includes a standard limitation of liability clause.

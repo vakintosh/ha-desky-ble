@@ -57,6 +57,9 @@
             "save_preset_3": { "name": "Save preset 3" },
             "save_preset_4": { "name": "Save preset 4" }
         },
+        "cover": {
+            "desk": { "name": "Desk" }
+        },
         "number": {
             "target_height": { "name": "Target height" },
             "reminder": { "name": "Reminder" }

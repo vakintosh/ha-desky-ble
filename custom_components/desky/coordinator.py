@@ -1,3 +1,5 @@
+"""DataUpdateCoordinator for Desky BLE standing desks."""
+
 from __future__ import annotations
 
 import asyncio
@@ -5,12 +7,11 @@ import logging
 from datetime import timedelta
 from typing import TYPE_CHECKING
 
+from desky_ble import DeskyBleClient, DeskState
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .ble_client import DeskyBleClient
 from .const import DEFAULT_POLL_INTERVAL, DOMAIN
-from .protocol import DeskState
 
 if TYPE_CHECKING:
     from bleak.backends.device import BLEDevice
