@@ -1,0 +1,366 @@
+blueprint:
+  name: "Standing Desk Routine"
+  description: >
+    A progressive 3-phase standing desk routine designed to build postural
+    endurance without fatigue across an 8-hour workday.
+
+    Choose the routine that best matches your comfort level and work style:
+
+    - **Routine 1 – Gentle Start:** 20-min stand / 40-min sit
+    - **Routine 2 – Balanced Alternation:** 30-min stand / 30-min sit
+    - **Routine 3 – Extended Standing:** 40-min stand / 80-min sit
+    - **Routine 4 – Custom:** Define your own stand / sit durations
+
+    The automation fires **only during your configured work hours** and sends
+    a notification every time you should switch posture. A calf-raise reminder
+    is included for Routine 2 & 3 standing periods to prevent "frozen standing".
+
+    A **haptic warning** uses the desk's built-in reminder countdown
+    (`number.standing_desk_reminder`). At each posture change, the reminder is
+    set so the desk vibrates N minutes before the next switch (configurable,
+    default 2 minutes).
+
+    **Setup:**
+    1. Import this blueprint.
+    2. Create one automation for the routine you want to follow.
+    3. Set your work-hours start/end times and the notify target.
+    domain: automation
+    author: "vakintosh"
+    source_url: "https://github.com/vakintosh/ha-desky-ble"
+
+    input:
+    phase:
+      name: "Desk Routine"
+      description: >
+      Select the routine that best fits your preference for standing and
+      sitting intervals.
+      default: "1"
+      selector:
+      select:
+        options:
+        - label: "Routine 1 – Gentle Start (Stand 20 min / Sit 40 min)"
+          value: "1"
+        - label: "Routine 2 – Balanced Alternation (Stand 30 min / Sit 30 min)"
+          value: "2"
+        - label: "Routine 3 – Extended Standing (Stand 40 min / Sit 80 min)"
+          value: "3"
+        - label: "Routine 4 – Custom (define your own stand / sit times)"
+          value: "4"
+
+    custom_stand_minutes:
+      name: "Custom Stand Duration (Phase 4 only)"
+      description: >-
+        How many minutes you want to stand per cycle when Phase 4 – Custom is
+        selected. Ignored for Phases 1-3.
+      default: 25
+      selector:
+        number:
+          min: 5
+          max: 120
+          unit_of_measurement: min
+          mode: slider
+
+    custom_sit_minutes:
+      name: "Custom Sit Duration (Phase 4 only)"
+      description: >-
+        How many minutes you want to sit per cycle when Phase 4 – Custom is
+        selected. Ignored for Phases 1-3.
+      default: 35
+      selector:
+        number:
+          min: 5
+          max: 180
+          unit_of_measurement: min
+          mode: slider
+
+    work_start:
+      name: "Workday Start Time"
+      description: "Automations will only fire from this time onwards."
+      default: "09:00:00"
+      selector:
+        time: {}
+
+    work_end:
+      name: "Workday End Time"
+      description: "Automations will stop firing after this time."
+      default: "17:00:00"
+      selector:
+        time: {}
+
+    notify_target:
+      name: "Notification Service"
+      description: >
+        The `notify.*` service to call (e.g. `notify.mobile_app_my_phone`).
+        Use `notify.persistent_notification` to display inside the HA UI.
+      default: "notify.persistent_notification"
+      selector:
+        text: {}
+
+    preset_sit:
+      name: "Sit Preset Button (Preset 1)"
+      description: >
+        The button entity that moves the desk to the sitting position.
+        Defaults to `button.standing_desk_preset_1`.
+      default: "button.standing_desk_preset_1"
+      selector:
+        entity:
+          filter:
+            - domain: button
+          multiple: false
+
+    preset_stand:
+      name: "Stand Preset Button (Preset 2)"
+      description: >
+        The button entity that moves the desk to the standing position.
+        Defaults to `button.standing_desk_preset_2`.
+      default: "button.standing_desk_preset_2"
+      selector:
+        entity:
+          filter:
+            - domain: button
+          multiple: false
+
+    reminder_entity:
+      name: "Desk Reminder (countdown timer)"
+      description: >
+        The number entity for the desk's built-in reminder countdown
+        (`number.standing_desk_reminder`). Setting this to N minutes starts
+        an internal countdown on the desk controller — when it reaches zero
+        the desk vibrates. Leave blank to disable the haptic warning.
+      default: "number.standing_desk_reminder"
+      selector:
+        entity:
+          filter:
+            - domain: number
+          multiple: false
+
+    reminder_lead_minutes:
+      name: "Vibration Warning Lead Time"
+      description: >-
+        How many minutes before each posture change the desk should vibrate.
+        For example, set to 2 and the desk buzzes 2 minutes before you need
+        to stand or sit. Only used when a Desk Reminder entity is configured.
+      default: 2
+      selector:
+        number:
+          min: 1
+          max: 10
+          unit_of_measurement: min
+          mode: slider
+
+    enable_calf_raise_reminder:
+      name: "Calf-Raise Reminder (Phase 2 & 3 only)"
+      description: >
+        Send a secondary nudge partway through each standing period reminding
+        you to shift weight or do calf raises. Fires 10 minutes into every
+        standing interval.
+      default: true
+      selector:
+        boolean: {}
+
+    workday_sensor:
+      name: "Workday Sensor (optional)"
+      description: >
+        A binary_sensor that is `on` on working days (e.g. the Workday
+        integration's `binary_sensor.workday_sensor`). Leave blank to skip
+        this check.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: binary_sensor
+          multiple: false
+
+    presence_entity:
+      name: "Presence / Device Tracker (optional)"
+      description: >
+        A `person.*` or `device_tracker.*` entity. The automation will only
+        run when this entity is `home`. Useful for pausing the routine when
+        your iPhone leaves the home Wi-Fi. Leave blank to skip this check.
+      default: ""
+      selector:
+        entity:
+          filter:
+            - domain: person
+            - domain: device_tracker
+          multiple: false
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Variables derived from the chosen phase
+# ──────────────────────────────────────────────────────────────────────────────
+variables:
+  selected_phase: !input phase
+  custom_stand: !input custom_stand_minutes
+  custom_sit: !input custom_sit_minutes
+  work_start: !input work_start
+  work_end: !input work_end
+  notify_service: !input notify_target
+  preset_sit_btn: !input preset_sit
+  preset_stand_btn: !input preset_stand
+  reminder_entity_id: !input reminder_entity
+  reminder_lead: !input reminder_lead_minutes
+  calf_reminder: !input enable_calf_raise_reminder
+  workday_sensor_entity: !input workday_sensor
+  presence_entity_val: !input presence_entity
+
+  # Stand / sit durations in minutes for each phase
+  stand_minutes: >
+    {% if selected_phase == '1' %}20
+    {% elif selected_phase == '2' %}30
+    {% elif selected_phase == '3' %}40
+    {% else %}{{ custom_stand | int }}
+    {% endif %}
+
+  sit_minutes: >
+    {% if selected_phase == '1' %}40
+    {% elif selected_phase == '2' %}30
+    {% elif selected_phase == '3' %}80
+    {% else %}{{ custom_sit | int }}
+    {% endif %}
+
+  cycle_minutes: >
+    {{ (stand_minutes | int) + (sit_minutes | int) }}
+
+  phase_label: >
+    {% if selected_phase == '1' %}Phase 1 – 20/40 Rule
+    {% elif selected_phase == '2' %}Phase 2 – 50/50 Split
+    {% elif selected_phase == '3' %}Phase 3 – Golden Ratio
+    {% else %}Phase 4 – Custom ({{ custom_stand }}m stand / {{ custom_sit }}m sit)
+    {% endif %}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Trigger: fire every minute so we can calculate where we are in the cycle
+# ──────────────────────────────────────────────────────────────────────────────
+trigger:
+  - platform: time_pattern
+    minutes: "*"
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Condition: work hours + optional workday sensor + optional presence check
+# ──────────────────────────────────────────────────────────────────────────────
+condition:
+  # Only fire within configured work hours
+  - condition: template
+    value_template: >
+      {% set now_ts = now().timestamp() %}
+      {% set start_ts = today_at(work_start).timestamp() %}
+      {% set end_ts = today_at(work_end).timestamp() %}
+      {{ start_ts <= now_ts < end_ts }}
+
+  - condition: template
+    value_template: >
+      {{ workday_sensor_entity == '' or workday_sensor_entity == none
+         or states(workday_sensor_entity) == 'on' }}
+
+  # Only enforce presence check when the user has configured one
+  - condition: template
+    value_template: >
+      {{ presence_entity_val == '' or presence_entity_val == none
+         or states(presence_entity_val) == 'home' }}
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Action
+# ──────────────────────────────────────────────────────────────────────────────
+action:
+  - variables:
+      # Minutes elapsed since work_start
+      minutes_since_start: >
+        {% set now_ts = now().timestamp() %}
+        {% set start_today = today_at(work_start).timestamp() %}
+        {{ ((now_ts - start_today) / 60) | int }}
+
+      # Position within the current cycle (0 = first minute of standing)
+      cycle_position: >
+        {{ minutes_since_start % (cycle_minutes | int) }}
+
+      # Derived booleans
+      just_stood_up: >
+        {{ (cycle_position | int) == 0 }}
+
+      just_sat_down: >
+        {{ (cycle_position | int) == (stand_minutes | int) }}
+
+      calf_raise_nudge: >
+        {{ calf_reminder and selected_phase != '1' and (cycle_position | int) == 10 }}
+
+      # Reminder countdown values (desk vibrates when countdown hits 0)
+      # Set to (interval - lead) so it buzzes N min before the next switch
+      stand_reminder_minutes: >
+        {{ [(stand_minutes | int) - (reminder_lead | int), 1] | max }}
+
+      sit_reminder_minutes: >
+        {{ [(sit_minutes | int) - (reminder_lead | int), 1] | max }}
+
+  # ── 1. Time to STAND UP ───────────────────────────────────────────────────
+  - choose:
+      - conditions:
+          - condition: template
+            value_template: "{{ just_stood_up }}"
+        sequence:
+          - service: "{{ notify_service }}"
+            data:
+              title: "🧍 Stand Up! ({{ phase_label }})"
+              message: >
+                Time to raise your desk and stand for {{ stand_minutes }} minutes.
+                Use this time for emails, Slack, or light calls — save deep work for sitting.
+          - if:
+              - condition: template
+                value_template: "{{ preset_stand_btn != '' and preset_stand_btn != none }}"
+            then:
+              - service: button.press
+                target:
+                  entity_id: !input preset_stand
+          # Set the desk reminder so it vibrates 2 min before sitting
+          - if:
+              - condition: template
+                value_template: "{{ reminder_entity_id != '' and reminder_entity_id != none }}"
+            then:
+              - service: number.set_value
+                target:
+                  entity_id: !input reminder_entity
+                data:
+                  value: "{{ stand_reminder_minutes }}"
+
+      # ── 2. Time to SIT DOWN ──────────────────────────────────────────────
+      - conditions:
+          - condition: template
+            value_template: "{{ just_sat_down }}"
+        sequence:
+          - service: "{{ notify_service }}"
+            data:
+              title: "🪑 Sit Down! ({{ phase_label }})"
+              message: >
+                Great standing session! Lower your desk and sit for {{ sit_minutes }} minutes.
+                Use this focused block for deep work — coding, writing, or analysis.
+          - if:
+              - condition: template
+                value_template: "{{ preset_sit_btn != '' and preset_sit_btn != none }}"
+            then:
+              - service: button.press
+                target:
+                  entity_id: !input preset_sit
+          # Set the desk reminder so it vibrates 2 min before standing
+          - if:
+              - condition: template
+                value_template: "{{ reminder_entity_id != '' and reminder_entity_id != none }}"
+            then:
+              - service: number.set_value
+                target:
+                  entity_id: !input reminder_entity
+                data:
+                  value: "{{ sit_reminder_minutes }}"
+
+      # ── 3. Calf-raise nudge during standing (Phase 2 & 3 only) ───────────
+      - conditions:
+          - condition: template
+            value_template: "{{ calf_raise_nudge }}"
+        sequence:
+          - service: "{{ notify_service }}"
+            data:
+              title: "🦵 Movement Reminder"
+              message: >
+                You've been standing for 10 minutes — shift your weight,
+                do a few calf raises, or take a short step around your desk.
+
+mode: single
+max_exceeded: silent

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "desky-ble"
-version = "0.1.2"
+version = "0.1.3"
 description = "Unofficial Python library for local Bluetooth LE control of Desky® Standing Desks."
 readme = "README.md"
 requires-python = ">=3.13"
@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
     "bleak>=2.1.1",
-    "bleak-retry-connector>=4.5.0",
+    "bleak-retry-connector>=4.4.0",
 ]
 
 [project.urls]
