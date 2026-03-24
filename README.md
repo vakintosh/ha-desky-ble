@@ -52,6 +52,31 @@ Once configured, the integration creates the following entities for your desk:
 | Vibration | Switch | Configuration | Toggle vibration feedback |
 | LED Lighting | Switch | Configuration | Toggle the LED strip on/off |
 
+## Blueprints
+
+### Standing Desk Routine
+An automation blueprint that implements a progressive 3-phase standing desk routine across your workday.
+
+[![Import Blueprint](https://my.home-assistant.io/badges/blueprint_import.svg)](https://my.home-assistant.io/redirect/blueprint_import/?blueprint_url=https%3A%2F%2Fgithub.com%2Fvakintosh%2Fha-desky-ble%2Fblob%2Fmain%2Fblueprints%2Fstanding_desk_routine.yaml)
+
+**Available routines:**
+
+| Routine | Stand | Sit | Best for |
+|---------|-------|-----|----------|
+| 1 – Gentle Start | 20 min | 40 min | Beginners / low stamina |
+| 2 – Balanced Alternation | 30 min | 30 min | Most users |
+| 3 – Extended Standing | 40 min | 80 min | Experienced standers |
+| 4 – Custom | You choose | You choose | Full control |
+
+**Features:**
+- Fires only within your configured work hours (with optional workday sensor and presence check)
+- Sends a push/persistent notification at every posture change
+- Automatically triggers your sit/stand presets via the preset buttons
+- Haptic warning: uses the desk's built-in reminder countdown (`number.standing_desk_reminder`) to vibrate the desk N minutes before each posture change
+- Optional calf-raise nudge 10 minutes into each standing period (Routines 2 & 3)
+
+> **Vibration / Reminder note:** When the desk's vibration reminder fires (controller vibrates), the countdown stops and must be **manually reset by pressing the M button on the desk controller** before the next reminder cycle will work. The blueprint automatically sets a new countdown at each posture transition — no extra action is required unless you want to dismiss an active vibration mid-cycle.
+
 ## Architecture
 The BLE protocol layer (frame encoding, command opcodes, notification parsing, and connection management) lives in a separate [`desky-ble`](https://pypi.org/project/desky-ble/) Python package. The Home Assistant integration imports it as a runtime dependency — this keeps the integration focused on HA platform glue and makes the BLE logic reusable outside HA.
 
@@ -79,6 +104,7 @@ Once the integration is installed:
 | Presets not saving | Press the *Save Preset* button (disabled by default — enable it first in the entity settings). |
 | Settings reset after reconnect | This is expected BLE behavior — the integration automatically restores your preferred settings after each reconnect. |
 | BLE address changed | Use **Settings → Devices & Services → Desky → Configure → Reconfigure** to update the address without re-adding the device. |
+| Blueprint vibration reminder stops working | After the desk vibrates, you must press the **M button** on the desk controller to reset the countdown. The blueprint sets a new reminder at each posture switch, but an unacknowledged vibration blocks it until the M button is pressed. |
 
 ## License
 This project is licensed under the MIT License. See the `LICENSE` file for details. This license includes a standard limitation of liability clause.
