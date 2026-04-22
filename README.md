@@ -81,6 +81,14 @@ An automation blueprint that implements a progressive 3-phase standing desk rout
 The BLE protocol layer (frame encoding, command opcodes, notification parsing, and connection management) lives in a separate [`desky-ble`](https://pypi.org/project/desky-ble/) Python package. The Home Assistant integration imports it as a runtime dependency — this keeps the integration focused on HA platform glue and makes the BLE logic reusable outside HA.
 
 ## Installation
+
+### HACS (Recommended)
+1. Open HACS in your Home Assistant instance.
+2. Click the three-dot menu in the top right and select **Custom repositories**.
+3. Add `https://github.com/vakintosh/ha-desky-ble` with category **Integration**.
+4. Search for **Desky Standing Desk** in HACS and click **Download**.
+5. Restart Home Assistant.
+
 ### Manual Installation
 1. Download the `custom_components/desky` folder from this repository.
 2. Copy the folder into your Home Assistant `config/custom_components/` directory.
