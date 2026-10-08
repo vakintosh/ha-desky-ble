@@ -104,13 +104,13 @@ class DeskyBleClient:
     __slots__ = (
         "_ble_device",
         "_client",
-        "_variant",
-        "_write_char",
+        "_desired_settings",
+        "_lock",
         "_read_char",
         "_state",
         "_state_callback",
-        "_lock",
-        "_desired_settings",
+        "_variant",
+        "_write_char",
     )
 
     def __init__(
@@ -139,6 +139,14 @@ class DeskyBleClient:
     @property
     def is_connected(self) -> bool:
         return self._client is not None and self._client.is_connected
+
+    def set_ble_device(self, ble_device: BLEDevice) -> None:
+        """Rebind to a fresher BLEDevice (e.g. heard via a different proxy).
+
+        Does not touch the current connection; takes effect on the next
+        call to connect().
+        """
+        self._ble_device = ble_device
 
     async def connect(self) -> None:
         """Establish BLE connection with retry logic."""

@@ -38,7 +38,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: DeskyConfigEntry) -> boo
             f"Could not find Desky BLE device with address {address}"
         )
 
-    coordinator = DeskyCoordinator(hass, ble_device, poll_interval)
+    coordinator = DeskyCoordinator(hass, entry, ble_device, poll_interval)
+    coordinator.async_setup()
+    try:
+        await coordinator.async_connect()
+    except Exception as err:
+        raise ConfigEntryNotReady(
+            f"Could not connect to Desky BLE device with address {address}"
+        ) from err
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = coordinator
@@ -56,8 +63,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: DeskyConfigEntry) -> bo
     return unload_ok
 
 
-async def _async_update_options(
-    hass: HomeAssistant, entry: DeskyConfigEntry
-) -> None:
+async def _async_update_options(hass: HomeAssistant, entry: DeskyConfigEntry) -> None:
     """Handle options update by reloading the entry."""
     await hass.config_entries.async_reload(entry.entry_id)

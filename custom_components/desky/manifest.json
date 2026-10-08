@@ -19,7 +19,7 @@
     }
   ],
   "requirements": [
-    "desky-ble>=0.1.3"
+    "desky-ble>=0.1.4"
   ],
   "version": "0.2.1"
 }
