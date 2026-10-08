@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from desky_ble.ble_client import ALL_SERVICE_UUIDS
+from desky_ble.ble_client import ALL_SERVICE_UUIDS as ALL_SERVICE_UUIDS
 
 DOMAIN = "desky"
 DEFAULT_NAME = "Desky Standing Desk"
@@ -61,3 +61,8 @@ TOUCH_MODE_REVERSE_MAP: dict[str, int] = {v: k for k, v in TOUCH_MODE_MAP.items(
 CONF_UNIT = "unit"
 CONF_POLL_INTERVAL = "poll_interval"
 DEFAULT_POLL_INTERVAL = 30
+
+# Advertisement-driven reconnect backoff (seconds), doubling per failed
+# attempt, reset to MIN on the first successful reconnect.
+RECONNECT_BACKOFF_MIN_SECONDS = 5
+RECONNECT_BACKOFF_MAX_SECONDS = 120

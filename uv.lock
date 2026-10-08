@@ -780,15 +780,17 @@ wheels = [
 
 [[package]]
 name = "desky-ble"
-version = "0.1.3"
-source = { registry = "https://pypi.org/simple" }
+version = "0.1.4"
+source = { editable = "desky_ble" }
 dependencies = [
     { name = "bleak" },
     { name = "bleak-retry-connector" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ab/d7/994013e04af9b534c5447c2c008701aa4e6216e515f47e9fe01b890f7d77/desky_ble-0.1.3.tar.gz", hash = "sha256:d13ed53dc4dc39b92cee4b51136d2892c2e2d831117ba9bad72829ecc4bda5c8", size = 7080, upload-time = "2026-03-14T04:45:51.616Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c3/ae/423cd6189f356e1f7d87b4b44f36ed8f143c430d998f3d0a64c5cded0a0b/desky_ble-0.1.3-py3-none-any.whl", hash = "sha256:0f62d9b92387ca5091114359d67488cf2e30ccf8f6c0e825cf7c5f05e3b87332", size = 8604, upload-time = "2026-03-14T04:45:50.587Z" },
+
+[package.metadata]
+requires-dist = [
+    { name = "bleak", specifier = ">=2.1.1" },
+    { name = "bleak-retry-connector", specifier = ">=4.4.0" },
 ]
 
 [[package]]
@@ -1017,7 +1019,7 @@ dev = [
 requires-dist = [
     { name = "bleak", specifier = "==2.1.1" },
     { name = "bleak-retry-connector", specifier = ">=4.4.0" },
-    { name = "desky-ble", specifier = "==0.1.3" },
+    { name = "desky-ble", editable = "desky_ble" },
 ]
 
 [package.metadata.requires-dev]
